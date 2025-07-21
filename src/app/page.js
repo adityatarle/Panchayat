@@ -127,6 +127,40 @@ export default function Home() {
       route: '/caste-certificate'
     },
     {
+      id: 'marriage-certificate',
+      title: {
+        hi: 'विवाह प्रमाणपत्र',
+        mr: 'विवाह प्रमाणपत्र',
+        en: 'Marriage Certificate'
+      },
+      description: {
+        hi: 'विवाह प्रमाणपत्र के लिए आवेदन करें',
+        mr: 'विवाह प्रमाणपत्रासाठी अर्ज करा',
+        en: 'Apply for marriage certificate'
+      },
+      icon: '💍',
+      bgColor: 'bg-pink-100',
+      iconColor: 'text-pink-600',
+      route: '/marriage-certificate'
+    },
+    {
+      id: 'non-availability',
+      title: {
+        hi: 'अनुपलब्धता प्रमाणपत्र',
+        mr: 'अनुपलब्धता प्रमाणपत्र',
+        en: 'Non-Availability Certificate'
+      },
+      description: {
+        hi: 'अनुपलब्ध दस्तावेज़ों के लिए प्रमाणपत्र',
+        mr: 'अनुपलब्ध कागदपत्रांसाठी प्रमाणपत्र',
+        en: 'Certificate for unavailable documents'
+      },
+      icon: '📄',
+      bgColor: 'bg-gray-100',
+      iconColor: 'text-gray-600',
+      route: '/non-availability-certificate'
+    },
+    {
       id: 'complaint',
       title: {
         hi: 'शिकायत दर्ज करें',
@@ -181,6 +215,15 @@ export default function Home() {
       },
       icon: '❓',
       route: '/help'
+    },
+    {
+      title: {
+        hi: 'एडमिन लॉगिन',
+        mr: 'एडमिन लॉगिन',
+        en: 'Admin Login'
+      },
+      icon: '🔐',
+      route: '/admin'
     }
   ];
 
