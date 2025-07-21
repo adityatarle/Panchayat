@@ -1,17 +1,20 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "../../contexts/LanguageContext";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 
-const geist = Geist({
-  variable: "--font-geist-sans",
+// Government-appropriate fonts
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  display: 'swap',
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const notoSansDevanagari = Noto_Sans_Devanagari({
+  variable: "--font-devanagari",
+  subsets: ["devanagari"],
+  display: 'swap',
 });
 
 export const metadata = {
@@ -22,16 +25,21 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="hi">
+    <html lang="hi" className="scroll-smooth">
+      <head>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏛️</text></svg>" />
+      </head>
       <body
-        className={`${geist.variable} ${geistMono.variable} antialiased bg-gray-50`}
+        className={`${inter.variable} ${notoSansDevanagari.variable} antialiased bg-gray-50 font-sans`}
       >
         <LanguageProvider>
-          <Header />
-          <main className="min-h-screen">
-            {children}
-          </main>
-          <Footer />
+          <div className="flex flex-col min-h-screen">
+            <Header />
+            <main className="flex-grow">
+              {children}
+            </main>
+            <Footer />
+          </div>
         </LanguageProvider>
       </body>
     </html>

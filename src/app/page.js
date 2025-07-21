@@ -301,23 +301,80 @@ export default function Home() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Hero Section */}
-      <section className="text-center mb-12">
-        <div className="bg-gradient-to-r from-orange-100 via-white to-green-100 rounded-lg p-8 mb-8">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-            {t(homeTexts.heroTitle)}
-          </h2>
-          <p className="text-lg text-gray-600 mb-6">
-            {t(homeTexts.heroSubtitle)}
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <span className="bg-white px-4 py-2 rounded-full text-sm font-medium shadow-sm">✨ {language === 'hi' ? 'तुरंत सेवा' : language === 'mr' ? 'तत्काळ सेवा' : 'Instant Service'}</span>
-            <span className="bg-white px-4 py-2 rounded-full text-sm font-medium shadow-sm">🔒 {language === 'hi' ? 'सुरक्षित' : language === 'mr' ? 'सुरक्षित' : 'Secure'}</span>
-            <span className="bg-white px-4 py-2 rounded-full text-sm font-medium shadow-sm">📱 {language === 'hi' ? 'मोबाइल फ्रेंडली' : language === 'mr' ? 'मोबाइल फ्रेंडली' : 'Mobile Friendly'}</span>
+    <div className="bg-gray-50">
+      {/* Government Hero Banner */}
+      <section className="bg-gov-gradient text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-govBlue-900 opacity-95"></div>
+        <div className="container mx-auto px-4 py-16 relative z-10">
+          <div className="text-center max-w-4xl mx-auto">
+            {/* National Emblem */}
+            <div className="mb-6">
+              <div className="w-20 h-20 bg-white rounded-full mx-auto flex items-center justify-center mb-4">
+                <span className="text-govBlue-800 text-3xl">🏛️</span>
+              </div>
+              <div className="text-saffron font-bold text-lg mb-2">भारत सरकार | Government of India</div>
+              <div className="text-white text-sm">महाराष्ट्र राज्य | State of Maharashtra</div>
+            </div>
+            
+            <h1 className="text-3xl md:text-5xl font-bold mb-6">
+              {t(homeTexts.heroTitle)}
+            </h1>
+            <p className="text-xl md:text-2xl text-blue-100 mb-8 leading-relaxed">
+              {t(homeTexts.heroSubtitle)}
+            </p>
+            
+            {/* Government Initiatives */}
+            <div className="flex flex-wrap justify-center gap-4 mb-8">
+              <div className="flex items-center space-x-2 bg-white bg-opacity-20 rounded-full px-4 py-2">
+                <span className="text-saffron">🇮🇳</span>
+                <span className="text-sm font-medium">डिजिटल इंडिया</span>
+              </div>
+              <div className="flex items-center space-x-2 bg-white bg-opacity-20 rounded-full px-4 py-2">
+                <span className="text-green">✅</span>
+                <span className="text-sm font-medium">24x7 ऑनलाइन सेवा</span>
+              </div>
+              <div className="flex items-center space-x-2 bg-white bg-opacity-20 rounded-full px-4 py-2">
+                <span className="text-saffron">🔒</span>
+                <span className="text-sm font-medium">सुरक्षित एवं विश्वसनीय</span>
+              </div>
+            </div>
+
+            {/* Quick Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/track-application" className="bg-csc-orange hover:bg-orange-600 text-white px-8 py-3 rounded-lg font-medium transition-colors">
+                📱 आवेदन ट्रैक करें
+              </Link>
+              <Link href="/download-certificate" className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border border-white px-8 py-3 rounded-lg font-medium transition-colors">
+                📄 प्रमाणपत्र डाउनलोड करें
+              </Link>
+            </div>
           </div>
         </div>
+        
+        {/* Decorative Wave */}
+        <div className="absolute bottom-0 left-0 right-0">
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full h-16">
+            <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25" className="fill-gray-50"></path>
+            <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".5" className="fill-gray-50"></path>
+            <path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" className="fill-gray-50"></path>
+          </svg>
+        </div>
       </section>
+
+      {/* Government Notification Banner */}
+      <div className="bg-saffron text-navy py-3">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-center space-x-4 text-sm font-medium">
+            <span className="animate-pulse">📢</span>
+            <span>नवीन सूचना:</span>
+            <span>अब सभी प्रमाणपत्र 24 घंटे में जारी किए जाएंगे | All certificates will be issued within 24 hours</span>
+            <span className="text-white bg-navy px-2 py-1 rounded text-xs">नया</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-8">
 
       {/* Quick Actions */}
       <section className="mb-12">
@@ -340,10 +397,32 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {services.map((service) => (
             <Link key={service.id} href={service.route} className="group">
-              <div className={`${service.bgColor} p-6 rounded-lg hover:shadow-lg transition-all duration-200 group-hover:scale-105 border border-gray-100`}>
-                <div className={`text-4xl ${service.iconColor} mb-4`}>{service.icon}</div>
-                <h4 className="font-bold text-gray-800 mb-2">{t(service.title)}</h4>
-                <p className="text-xs text-gray-500 leading-relaxed">{t(service.description)}</p>
+              <div className="bg-white p-6 rounded-lg hover:shadow-xl transition-all duration-300 border border-gray-200 group-hover:border-csc-orange group-hover:-translate-y-1">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-12 bg-govBlue-50 rounded-lg flex items-center justify-center mr-3 group-hover:bg-csc-orange group-hover:text-white transition-colors">
+                    <span className="text-xl">{service.icon}</span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {language === 'hi' ? 'सरकारी सेवा' : language === 'mr' ? 'सरकारी सेवा' : 'Gov Service'}
+                  </div>
+                </div>
+                <h4 className="font-bold text-govBlue-800 mb-2 group-hover:text-csc-orange transition-colors">
+                  {t(service.title)}
+                </h4>
+                <p className="text-xs text-gray-600 leading-relaxed mb-3">
+                  {t(service.description)}
+                </p>
+                
+                {/* Service Status */}
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center space-x-1">
+                    <span className="w-2 h-2 bg-green rounded-full"></span>
+                    <span className="text-green">उपलब्ध</span>
+                  </div>
+                  <span className="text-csc-orange font-medium">
+                    {language === 'hi' ? 'आवेदन करें →' : language === 'mr' ? 'अर्ज करा →' : 'Apply →'}
+                  </span>
+                </div>
               </div>
             </Link>
           ))}
@@ -405,6 +484,8 @@ export default function Home() {
           </div>
         </div>
       </section>
-    </div>
+      
+      </div> {/* End Main Content Container */}
+    </div> {/* End Background Container */}
   );
 }
