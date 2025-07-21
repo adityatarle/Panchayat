@@ -67,13 +67,146 @@ export default function TrackApplication() {
     }
   };
 
-  const handleSearch = () => {
-    if (sampleApplications[trackingNumber]) {
-      setTrackingResult(sampleApplications[trackingNumber]);
-    } else {
-      setTrackingResult(null);
-      alert('आवेदन नंबर नहीं मिला। कृपया सही नंबर डालें।');
+  const handleSearch = async () => {
+    if (!trackingNumber.trim()) {
+      alert('कृपया आवेदन संख्या दर्ज करें।');
+      return;
     }
+
+    try {
+      const response = await fetch(`/api/track-application?applicationId=${trackingNumber}`);
+      const result = await response.json();
+
+      if (result.success && result.data.length > 0) {
+        // Transform API data to match UI format
+        const application = result.data[0];
+        const transformedResult = {
+          type: application.type || 'Application',
+          applicantName: application.childName || application.applicantName || application.ownerName || 'N/A',
+          applicationDate: new Date(application.submissionDate || application.registrationDate || application.applicationDate).toLocaleDateString('en-CA'),
+          status: getStatusDisplay(application.status),
+          statusColor: getStatusColor(application.status),
+          bgColor: getStatusBgColor(application.status),
+          currentStage: getCurrentStage(application.status),
+          expectedCompletion: getExpectedCompletion(application),
+          stages: generateStages(application),
+          remarks: application.remarks || getDefaultRemarks(application.status),
+          downloadLink: application.status === 'certificate_ready' || application.status === 'approved' ? `/download-certificate?id=${trackingNumber}` : null
+        };
+        setTrackingResult(transformedResult);
+      } else {
+        // Fallback to sample data for demo
+        if (sampleApplications[trackingNumber]) {
+          setTrackingResult(sampleApplications[trackingNumber]);
+        } else {
+          setTrackingResult(null);
+          alert('आवेदन नंबर नहीं मिला। कृपया सही नंबर डालें।');
+        }
+      }
+    } catch (error) {
+      console.error('Tracking error:', error);
+      // Fallback to sample data for demo
+      if (sampleApplications[trackingNumber]) {
+        setTrackingResult(sampleApplications[trackingNumber]);
+      } else {
+        alert('आवेदन खोजने में त्रुटि हुई। कृपया पुनः प्रयास करें।');
+      }
+    }
+  };
+
+  const getStatusDisplay = (status) => {
+    const statusMap = {
+      'submitted': 'Submitted',
+      'under_review': 'Under Review',
+      'field_verification': 'Field Verification',
+      'approved': 'Approved',
+      'rejected': 'Rejected',
+      'certificate_ready': 'Certificate Ready'
+    };
+    return statusMap[status] || status;
+  };
+
+  const getStatusColor = (status) => {
+    const colorMap = {
+      'submitted': 'text-blue-600',
+      'under_review': 'text-yellow-600',
+      'field_verification': 'text-orange-600',
+      'approved': 'text-green-600',
+      'rejected': 'text-red-600',
+      'certificate_ready': 'text-green-600'
+    };
+    return colorMap[status] || 'text-gray-600';
+  };
+
+  const getStatusBgColor = (status) => {
+    const bgColorMap = {
+      'submitted': 'bg-blue-100',
+      'under_review': 'bg-yellow-100',
+      'field_verification': 'bg-orange-100',
+      'approved': 'bg-green-100',
+      'rejected': 'bg-red-100',
+      'certificate_ready': 'bg-green-100'
+    };
+    return bgColorMap[status] || 'bg-gray-100';
+  };
+
+  const getCurrentStage = (status) => {
+    const stageMap = {
+      'submitted': 'Application Submitted',
+      'under_review': 'Document Verification',
+      'field_verification': 'Field Verification',
+      'approved': 'Final Approval Completed',
+      'rejected': 'Application Rejected',
+      'certificate_ready': 'Certificate Ready for Download'
+    };
+    return stageMap[status] || 'Processing';
+  };
+
+  const getExpectedCompletion = (application) => {
+    if (application.status === 'approved' || application.status === 'certificate_ready') {
+      return 'Completed';
+    }
+    if (application.status === 'rejected') {
+      return 'N/A';
+    }
+    // Calculate expected completion based on submission date
+    const submissionDate = new Date(application.submissionDate || application.registrationDate);
+    const expectedDate = new Date(submissionDate);
+    expectedDate.setDate(expectedDate.getDate() + 15); // Add 15 days
+    return expectedDate.toLocaleDateString('en-CA');
+  };
+
+  const generateStages = (application) => {
+    const baseStages = [
+      { name: 'Application Submitted', completed: true, date: new Date(application.submissionDate || application.registrationDate).toLocaleDateString('en-CA') },
+      { name: 'Payment Verified', completed: application.paymentStatus === 'paid' || ['under_review', 'field_verification', 'approved', 'certificate_ready'].includes(application.status), date: '' },
+      { name: 'Document Verification', completed: ['approved', 'certificate_ready'].includes(application.status), date: '' },
+      { name: 'Final Approval', completed: ['approved', 'certificate_ready'].includes(application.status), date: application.approvalDate ? new Date(application.approvalDate).toLocaleDateString('en-CA') : '' },
+      { name: 'Certificate Ready', completed: application.status === 'certificate_ready', date: '' }
+    ];
+
+    // Add field verification stage for residence certificates
+    if (application.type === 'Residence Certificate') {
+      baseStages.splice(2, 0, {
+        name: 'Field Verification',
+        completed: ['approved', 'certificate_ready'].includes(application.status),
+        date: application.fieldVerification?.completedDate ? new Date(application.fieldVerification.completedDate).toLocaleDateString('en-CA') : ''
+      });
+    }
+
+    return baseStages;
+  };
+
+  const getDefaultRemarks = (status) => {
+    const remarksMap = {
+      'submitted': 'आपका आवेदन प्राप्त हो गया है और प्रक्रिया शुरू की गई है।',
+      'under_review': 'आपके दस्तावेज सत्यापन के लिए भेजे गए हैं। कृपया 2-3 दिन प्रतीक्षा करें।',
+      'field_verification': 'फील्ड वेरिफिकेशन का काम चल रहा है। जल्द ही पूरा हो जाएगा।',
+      'approved': 'आपका आवेदन स्वीकृत हो गया है। प्रमाणपत्र तैयार किया जा रहा है।',
+      'rejected': 'आवेदन अस्वीकार कर दिया गया है। कृपया विवरण के लिए संपर्क करें।',
+      'certificate_ready': 'आपका प्रमाणपत्र तैयार है। आप इसे डाउनलोड कर सकते हैं।'
+    };
+    return remarksMap[status] || 'आपके आवेदन की समीक्षा की जा रही है।';
   };
 
   const getStatusIcon = (status) => {
