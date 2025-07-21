@@ -485,7 +485,7 @@ export default function Home() {
         </div>
       </section>
       
-      </div> {/* End Main Content Container */}
-    </div> {/* End Background Container */}
+      </div>
+    </div>
   );
 }
