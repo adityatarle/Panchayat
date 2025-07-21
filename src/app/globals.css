@@ -63,7 +63,7 @@ body {
 }
 
 .form-textarea {
-  @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-csc-orange focus:border-transparent transition-all duration-200 bg-white resize-vertical;
+  @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-csc-orange focus:border-transparent transition-all duration-200 bg-white resize-y;
 }
 
 /* Government Card Styles */
