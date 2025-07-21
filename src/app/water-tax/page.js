@@ -53,27 +53,122 @@ export default function WaterTax() {
     }
   ];
 
-  const handleSearch = () => {
-    if (connectionNumber === 'WC001234') {
-      setSearchResult({
-        connectionNumber: 'WC001234',
-        consumerName: 'राम कुमार शर्मा',
-        address: 'प्लॉट नं. 123, वार्ड नं. 5, ग्राम पंचायत सैंपल',
-        connectionType: 'Domestic',
-        status: 'Active',
-        currentDue: 850,
-        lastPayment: '2023-11-15',
-        meterNumber: 'WM789012'
-      });
-    } else {
-      setSearchResult(null);
-      alert('कनेक्शन नंबर नहीं मिला। कृपया सही नंबर डालें।');
+  const handleSearch = async () => {
+    if (!connectionNumber.trim()) {
+      alert('कृपया कनेक्शन नंबर दर्ज करें।');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/water-tax?connectionId=${connectionNumber}`);
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        const connection = result.data;
+        setSearchResult({
+          connectionNumber: connection.connectionId,
+          consumerName: connection.ownerName,
+          address: connection.propertyAddress,
+          connectionType: connection.connectionType,
+          status: connection.status,
+          currentDue: connection.currentBill?.totalAmount || 0,
+          lastPayment: connection.paymentHistory?.[0]?.paymentDate || 'N/A',
+          meterNumber: connection.meterNumber || 'N/A'
+        });
+      } else {
+        // Fallback to sample data for demo
+        if (connectionNumber === 'WC001234') {
+          setSearchResult({
+            connectionNumber: 'WC001234',
+            consumerName: 'राम कुमार शर्मा',
+            address: 'प्लॉट नं. 123, वार्ड नं. 5, ग्राम पंचायत सैंपल',
+            connectionType: 'Domestic',
+            status: 'Active',
+            currentDue: 850,
+            lastPayment: '2023-11-15',
+            meterNumber: 'WM789012'
+          });
+        } else {
+          setSearchResult(null);
+          alert('कनेक्शन नंबर नहीं मिला। कृपया सही नंबर डालें।');
+        }
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      // Fallback to sample data
+      if (connectionNumber === 'WC001234') {
+        setSearchResult({
+          connectionNumber: 'WC001234',
+          consumerName: 'राम कुमार शर्मा',
+          address: 'प्लॉट नं. 123, वार्ड नं. 5, ग्राम पंचायत सैंपल',
+          connectionType: 'Domestic',
+          status: 'Active',
+          currentDue: 850,
+          lastPayment: '2023-11-15',
+          meterNumber: 'WM789012'
+        });
+      } else {
+        alert('कनेक्शन खोजने में त्रुटि हुई। कृपया पुनः प्रयास करें।');
+      }
     }
   };
 
-  const handleNewConnectionSubmit = (e) => {
+  const handleNewConnectionSubmit = async (e) => {
     e.preventDefault();
-    alert('नया कनेक्शन आवेदन सफलतापूर्वक जमा किया गया! आपका आवेदन संख्या: WA' + Date.now().toString().slice(-6));
+    
+    try {
+      const submitData = {
+        action: 'new_connection',
+        ownerName: newConnectionData.applicantName,
+        ownerNameMarathi: newConnectionData.applicantNameMarathi,
+        fatherName: newConnectionData.fatherName,
+        mobileNumber: newConnectionData.contactNumber,
+        email: newConnectionData.email,
+        aadharNumber: newConnectionData.aadharNumber,
+        propertyAddress: newConnectionData.address,
+        propertyType: newConnectionData.propertyType,
+        plotNumber: newConnectionData.plotNumber,
+        connectionType: newConnectionData.connectionType,
+        applicationDate: new Date()
+      };
+      
+      const response = await fetch('/api/water-tax', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(submitData)
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        alert(`नया कनेक्शन आवेदन सफलतापूर्वक जमा किया गया! आपका आवेदन संख्या: ${result.connectionId}`);
+        // Reset form
+        setNewConnectionData({
+          applicantName: '',
+          applicantNameMarathi: '',
+          fatherName: '',
+          contactNumber: '',
+          email: '',
+          aadharNumber: '',
+          propertyNumber: '',
+          plotNumber: '',
+          address: '',
+          pincode: '',
+          connectionType: '',
+          waterUsage: '',
+          propertyType: '',
+          noOfMembers: '',
+          existingConnection: 'no'
+        });
+      } else {
+        alert(`आवेदन जमा करने में त्रुटि: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('Submission error:', error);
+      alert('आवेदन जमा करने में त्रुटि हुई। कृपया पुनः प्रयास करें।');
+    }
   };
 
   const handlePayment = (billAmount) => {

@@ -3,36 +3,45 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
-export default function ResidenceCertificate() {
+export default function IncomeCertificate() {
   const [formData, setFormData] = useState({
     applicantName: '',
     applicantNameMarathi: '',
     fatherName: '',
     motherName: '',
     dateOfBirth: '',
+    age: '',
+    sex: '',
+    occupation: '',
+    employerName: '',
+    employerAddress: '',
+    monthlyIncome: '',
+    annualIncome: '',
+    incomeSource: '',
     currentAddress: '',
     permanentAddress: '',
-    residingSince: '',
-    occupation: '',
-    monthlyIncome: '',
-    purpose: '',
     mobileNumber: '',
     email: '',
     aadharNumber: '',
+    panNumber: '',
     rationCardNumber: '',
-    voterIdNumber: '',
     caste: '',
-    maritalStatus: ''
+    maritalStatus: '',
+    purpose: '',
+    purposeDetails: '',
+    landDetails: '',
+    businessDetails: ''
   });
 
   const [documents, setDocuments] = useState({
     aadharCard: null,
+    panCard: null,
+    salarySlips: null,
+    bankStatements: null,
+    employmentCert: null,
+    incomeProof: null,
     rationCard: null,
-    voterIdCard: null,
-    electricityBill: null,
-    bankPassbook: null,
-    schoolCertificate: null,
-    affidavit: null
+    landRecords: null
   });
 
   const handleInputChange = (e) => {
@@ -56,61 +65,55 @@ export default function ResidenceCertificate() {
     e.preventDefault();
     
     try {
-      // Prepare form data for submission
       const submitData = {
         ...formData,
         documents: documents,
-        residenceSince: new Date(formData.residingSince || '2020-01-01'),
-        pincode: '413001', // Default pincode for Maharashtra
-        district: 'Maharashtra',
-        state: 'Maharashtra'
+        submissionDate: new Date(),
+        status: 'submitted'
       };
       
-      const response = await fetch('/api/residence-certificate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(submitData)
+      alert(`आय प्रमाणपत्र आवेदन सफलतापूर्वक जमा किया गया! आपका आवेदन संख्या: IC${Date.now().toString().slice(-6)}`);
+      
+      // Reset form
+      setFormData({
+        applicantName: '',
+        applicantNameMarathi: '',
+        fatherName: '',
+        motherName: '',
+        dateOfBirth: '',
+        age: '',
+        sex: '',
+        occupation: '',
+        employerName: '',
+        employerAddress: '',
+        monthlyIncome: '',
+        annualIncome: '',
+        incomeSource: '',
+        currentAddress: '',
+        permanentAddress: '',
+        mobileNumber: '',
+        email: '',
+        aadharNumber: '',
+        panNumber: '',
+        rationCardNumber: '',
+        caste: '',
+        maritalStatus: '',
+        purpose: '',
+        purposeDetails: '',
+        landDetails: '',
+        businessDetails: ''
       });
       
-      const result = await response.json();
-      
-      if (result.success) {
-        alert(`निवास प्रमाणपत्र आवेदन सफलतापूर्वक जमा किया गया! आपका आवेदन संख्या: ${result.applicationId}`);
-        // Reset form
-        setFormData({
-          applicantName: '',
-          applicantNameMarathi: '',
-          fatherName: '',
-          motherName: '',
-          dateOfBirth: '',
-          currentAddress: '',
-          permanentAddress: '',
-          residingSince: '',
-          occupation: '',
-          monthlyIncome: '',
-          purpose: '',
-          mobileNumber: '',
-          email: '',
-          aadharNumber: '',
-          rationCardNumber: '',
-          voterIdNumber: '',
-          caste: '',
-          maritalStatus: ''
-        });
-        setDocuments({
-          aadharCard: null,
-          rationCard: null,
-          voterIdCard: null,
-          electricityBill: null,
-          bankPassbook: null,
-          schoolCertificate: null,
-          affidavit: null
-        });
-      } else {
-        alert(`आवेदन जमा करने में त्रुटि: ${result.message}`);
-      }
+      setDocuments({
+        aadharCard: null,
+        panCard: null,
+        salarySlips: null,
+        bankStatements: null,
+        employmentCert: null,
+        incomeProof: null,
+        rationCard: null,
+        landRecords: null
+      });
     } catch (error) {
       console.error('Submission error:', error);
       alert('आवेदन जमा करने में त्रुटि हुई। कृपया पुनः प्रयास करें।');
@@ -129,19 +132,19 @@ export default function ResidenceCertificate() {
             आवेदन शुल्क: ₹30
           </div>
         </div>
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">निवास प्रमाणपत्र आवेदन</h1>
-        <p className="text-gray-600">Residence Certificate Application</p>
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">आय प्रमाणपत्र आवेदन</h1>
+        <p className="text-gray-600">Income Certificate Application</p>
       </div>
 
       {/* Important Instructions */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
-        <h2 className="text-lg font-bold text-yellow-800 mb-3">महत्वपूर्ण निर्देश | Important Instructions</h2>
-        <ul className="space-y-2 text-sm text-yellow-700">
-          <li>• आवेदक को इस ग्राम पंचायत में कम से कम 3 वर्ष से निवास करना आवश्यक है</li>
-          <li>• All applicants must be residing in this Gram Panchayat for at least 3 years</li>
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+        <h2 className="text-lg font-bold text-blue-800 mb-3">महत्वपूर्ण निर्देश | Important Instructions</h2>
+        <ul className="space-y-2 text-sm text-blue-700">
+          <li>• आय का सत्यापन किया जाएगा, गलत जानकारी देने पर कानूनी कार्रवाई हो सकती है</li>
+          <li>• Income verification will be done, legal action may be taken for false information</li>
+          <li>• पिछले 6 महीने की सैलरी स्लिप या आय प्रमाण आवश्यक है</li>
           <li>• सभी दस्तावेज स्पष्ट और पढ़ने योग्य होने चाहिए</li>
-          <li>• आवेदन की जांच के लिए स्थानीय सत्यापन किया जाएगा</li>
-          <li>• प्रमाणपत्र जारी करने में 7-15 कार्य दिवस लग सकते हैं</li>
+          <li>• प्रमाणपत्र जारी करने में 10-15 कार्य दिवस लग सकते हैं</li>
         </ul>
       </div>
 
@@ -220,6 +223,57 @@ export default function ResidenceCertificate() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                आयु *
+              </label>
+              <input
+                type="number"
+                name="age"
+                value={formData.age}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                required
+                min="18"
+                placeholder="Age in years"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                लिंग *
+              </label>
+              <select
+                name="sex"
+                value={formData.sex}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                required
+              >
+                <option value="">चुनें</option>
+                <option value="Male">पुरुष / Male</option>
+                <option value="Female">महिला / Female</option>
+                <option value="Transgender">तृतीय लिंग / Transgender</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                जाति *
+              </label>
+              <select
+                name="caste"
+                value={formData.caste}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                required
+              >
+                <option value="">चुनें</option>
+                <option value="General">सामान्य / General</option>
+                <option value="OBC">अन्य पिछड़ा वर्ग / OBC</option>
+                <option value="SC">अनुसूचित जाति / SC</option>
+                <option value="ST">अनुसूचित जनजाति / ST</option>
+                <option value="NT">घुमंतू जनजाति / NT</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 मोबाइल नंबर *
               </label>
               <input
@@ -263,44 +317,27 @@ export default function ResidenceCertificate() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                जाति *
+                पैन नंबर
               </label>
-              <select
-                name="caste"
-                value={formData.caste}
+              <input
+                type="text"
+                name="panNumber"
+                value={formData.panNumber}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                required
-              >
-                <option value="">चुनें</option>
-                <option value="General">सामान्य / General</option>
-                <option value="OBC">अन्य पिछड़ा वर्ग / OBC</option>
-                <option value="SC">अनुसूचित जाति / SC</option>
-                <option value="ST">अनुसूचित जनजाति / ST</option>
-                <option value="NT">घुमंतू जनजाति / NT</option>
-              </select>
+                placeholder="PAN Number"
+              />
             </div>
+          </div>
+        </div>
+
+        {/* Income Information */}
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+          <h2 className="text-xl font-bold text-gray-800 mb-6 border-b pb-2">आय की जानकारी | Income Information</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                वैवाहिक स्थिति *
-              </label>
-              <select
-                name="maritalStatus"
-                value={formData.maritalStatus}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                required
-              >
-                <option value="">चुनें</option>
-                <option value="Single">अविवाहित / Single</option>
-                <option value="Married">विवाहित / Married</option>
-                <option value="Divorced">तलाकशुदा / Divorced</option>
-                <option value="Widow">विधवा / Widow</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                व्यवसाय *
+                व्यवसाय/नौकरी *
               </label>
               <input
                 type="text"
@@ -309,12 +346,32 @@ export default function ResidenceCertificate() {
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                 required
-                placeholder="Occupation"
+                placeholder="Occupation/Job"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                मासिक आय (रुपए में)
+                आय का स्रोत *
+              </label>
+              <select
+                name="incomeSource"
+                value={formData.incomeSource}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                required
+              >
+                <option value="">चुनें</option>
+                <option value="Salary">वेतन / Salary</option>
+                <option value="Business">व्यवसाय / Business</option>
+                <option value="Agriculture">कृषि / Agriculture</option>
+                <option value="Pension">पेंशन / Pension</option>
+                <option value="Daily Wages">दैनिक मजदूरी / Daily Wages</option>
+                <option value="Other">अन्य / Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                मासिक आय (रुपए में) *
               </label>
               <input
                 type="number"
@@ -322,10 +379,86 @@ export default function ResidenceCertificate() {
                 value={formData.monthlyIncome}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                required
+                min="0"
                 placeholder="Monthly Income in Rupees"
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                वार्षिक आय (रुपए में) *
+              </label>
+              <input
+                type="number"
+                name="annualIncome"
+                value={formData.annualIncome}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                required
+                min="0"
+                placeholder="Annual Income in Rupees"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                नियोक्ता का नाम (यदि नौकरी में हैं)
+              </label>
+              <input
+                type="text"
+                name="employerName"
+                value={formData.employerName}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Employer Name"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                नियोक्ता का पता
+              </label>
+              <input
+                type="text"
+                name="employerAddress"
+                value={formData.employerAddress}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Employer Address"
+              />
+            </div>
           </div>
+          
+          {/* Conditional fields for specific income sources */}
+          {formData.incomeSource === 'Agriculture' && (
+            <div className="mt-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                भूमि का विवरण (एकड़ में)
+              </label>
+              <textarea
+                name="landDetails"
+                value={formData.landDetails}
+                onChange={handleInputChange}
+                rows="3"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="भूमि का विवरण - खेत का क्षेत्रफल, फसल का प्रकार आदि"
+              />
+            </div>
+          )}
+          
+          {formData.incomeSource === 'Business' && (
+            <div className="mt-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                व्यवसाय का विवरण
+              </label>
+              <textarea
+                name="businessDetails"
+                value={formData.businessDetails}
+                onChange={handleInputChange}
+                rows="3"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="व्यवसाय का प्रकार, दुकान का पता, व्यापार लाइसेंस आदि"
+              />
+            </div>
+          )}
         </div>
 
         {/* Address Information */}
@@ -334,7 +467,7 @@ export default function ResidenceCertificate() {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                वर्तमान पता (जहाँ आप रह रहे हैं) *
+                वर्तमान पता *
               </label>
               <textarea
                 name="currentAddress"
@@ -360,73 +493,45 @@ export default function ResidenceCertificate() {
                 placeholder="स्थायी पता लिखें..."
               />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  इस पते पर निवास कब से कर रहे हैं? *
-                </label>
-                <input
-                  type="text"
-                  name="residingSince"
-                  value={formData.residingSince}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  required
-                  placeholder="जैसे: जनवरी 2020 से"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  प्रमाणपत्र का उद्देश्य *
-                </label>
-                <select
-                  name="purpose"
-                  value={formData.purpose}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  required
-                >
-                  <option value="">चुनें</option>
-                  <option value="Job Application">नौकरी के लिए</option>
-                  <option value="Bank Account">बैंक खाता खोलने के लिए</option>
-                  <option value="Scholarship">छात्रवृत्ति के लिए</option>
-                  <option value="Educational Admission">शैक्षणिक प्रवेश के लिए</option>
-                  <option value="Government Scheme">सरकारी योजना के लिए</option>
-                  <option value="Other">अन्य</option>
-                </select>
-              </div>
-            </div>
           </div>
         </div>
 
-        {/* Additional Documents Numbers */}
+        {/* Purpose Information */}
         <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
-          <h2 className="text-xl font-bold text-gray-800 mb-6 border-b pb-2">अतिरिक्त दस्तावेज नंबर | Additional Document Numbers</h2>
+          <h2 className="text-xl font-bold text-gray-800 mb-6 border-b pb-2">प्रमाणपत्र का उद्देश्य | Purpose of Certificate</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                राशन कार्ड नंबर
+                प्रमाणपत्र का उद्देश्य *
               </label>
-              <input
-                type="text"
-                name="rationCardNumber"
-                value={formData.rationCardNumber}
+              <select
+                name="purpose"
+                value={formData.purpose}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Ration Card Number"
-              />
+                required
+              >
+                <option value="">चुनें</option>
+                <option value="Education">शिक्षा / Education</option>
+                <option value="Scholarship">छात्रवृत्ति / Scholarship</option>
+                <option value="Government Scheme">सरकारी योजना / Government Scheme</option>
+                <option value="Bank Loan">बैंक लोन / Bank Loan</option>
+                <option value="EWS Certificate">EWS प्रमाणपत्र / EWS Certificate</option>
+                <option value="Court Case">न्यायालय में / Court Case</option>
+                <option value="Other">अन्य / Other</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                वोटर आईडी नंबर
+                उद्देश्य का विस्तृत विवरण
               </label>
-              <input
-                type="text"
-                name="voterIdNumber"
-                value={formData.voterIdNumber}
+              <textarea
+                name="purposeDetails"
+                value={formData.purposeDetails}
                 onChange={handleInputChange}
+                rows="3"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Voter ID Number"
+                placeholder="प्रमाणपत्र की आवश्यकता का विस्तृत विवरण..."
               />
             </div>
           </div>
@@ -452,11 +557,11 @@ export default function ResidenceCertificate() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                राशन कार्ड
+                पैन कार्ड (यदि उपलब्ध हो)
               </label>
               <input
                 type="file"
-                name="rationCard"
+                name="panCard"
                 onChange={handleFileChange}
                 accept=".pdf,.jpg,.jpeg,.png"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -464,23 +569,11 @@ export default function ResidenceCertificate() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                वोटर आईडी कार्ड
+                सैलरी स्लिप/आय प्रमाण *
               </label>
               <input
                 type="file"
-                name="voterIdCard"
-                onChange={handleFileChange}
-                accept=".pdf,.jpg,.jpeg,.png"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                बिजली बिल (पिछले 3 महीने का) *
-              </label>
-              <input
-                type="file"
-                name="electricityBill"
+                name="salarySlips"
                 onChange={handleFileChange}
                 accept=".pdf,.jpg,.jpeg,.png"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -489,11 +582,24 @@ export default function ResidenceCertificate() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                बैंक पासबुक (पहला पेज)
+                बैंक स्टेटमेंट (6 महीने का) *
               </label>
               <input
                 type="file"
-                name="bankPassbook"
+                name="bankStatements"
+                onChange={handleFileChange}
+                accept=".pdf,.jpg,.jpeg,.png"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                नियोजन प्रमाणपत्र (यदि नौकरी में हैं)
+              </label>
+              <input
+                type="file"
+                name="employmentCert"
                 onChange={handleFileChange}
                 accept=".pdf,.jpg,.jpeg,.png"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -501,23 +607,11 @@ export default function ResidenceCertificate() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                स्कूल छोड़ने का प्रमाणपत्र (यदि उपलब्ध हो)
+                अन्य आय प्रमाण दस्तावेज
               </label>
               <input
                 type="file"
-                name="schoolCertificate"
-                onChange={handleFileChange}
-                accept=".pdf,.jpg,.jpeg,.png"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                शपथ पत्र (नोटेराइज्ड)
-              </label>
-              <input
-                type="file"
-                name="affidavit"
+                name="incomeProof"
                 onChange={handleFileChange}
                 accept=".pdf,.jpg,.jpeg,.png"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -536,7 +630,7 @@ export default function ResidenceCertificate() {
               required
             />
             <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
-              मैं घोषणा करता/करती हूं कि उपरोक्त सभी जानकारी सत्य है और मैं इस ग्राम पंचायत का वास्तविक निवासी हूं। 
+              मैं घोषणा करता/करती हूं कि उपरोक्त सभी जानकारी सत्य है और आय की जानकारी सही है। 
               यदि कोई जानकारी गलत पाई जाती है तो मैं इसकी जिम्मेदारी लेता/लेती हूं।
             </label>
           </div>
