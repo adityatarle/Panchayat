@@ -57,9 +57,70 @@ export default function BirthCertificate() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert('आवेदन सफलतापूर्वक जमा किया गया! आपका आवेदन संख्या: BC' + Date.now().toString().slice(-6));
+    
+    try {
+      // Prepare form data for submission
+      const submitData = {
+        ...formData,
+        documents: documents
+      };
+      
+      const response = await fetch('/api/birth-certificate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(submitData)
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        alert(`आवेदन सफलतापूर्वक जमा किया गया! आपका आवेदन संख्या: ${result.applicationId}`);
+        // Reset form
+        setFormData({
+          childName: '',
+          childNameMarathi: '',
+          fatherName: '',
+          fatherNameMarathi: '',
+          motherName: '',
+          motherNameMarathi: '',
+          dateOfBirth: '',
+          timeOfBirth: '',
+          placeOfBirth: '',
+          sex: '',
+          weight: '',
+          hospitalName: '',
+          doctorName: '',
+          informantName: '',
+          informantRelation: '',
+          informantAddress: '',
+          permanentAddress: '',
+          registrationDate: '',
+          caste: '',
+          religion: '',
+          nationality: 'Indian',
+          fatherOccupation: '',
+          motherOccupation: '',
+          fatherEducation: '',
+          motherEducation: ''
+        });
+        setDocuments({
+          hospitalDischarge: null,
+          parentsAadhar: null,
+          parentsMarriageCert: null,
+          affidavit: null,
+          addressProof: null
+        });
+      } else {
+        alert(`आवेदन जमा करने में त्रुटि: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('Submission error:', error);
+      alert('आवेदन जमा करने में त्रुटि हुई। कृपया पुनः प्रयास करें।');
+    }
   };
 
   return (
