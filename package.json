@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build",
+    "build": "node check-package.js && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "check-package": "node check-package.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",
