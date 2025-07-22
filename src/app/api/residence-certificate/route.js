@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server';
-import prisma from '../../../../lib/prisma';
+// TODO: Migrate to Supabase
+// import prisma from '../../../../lib/prisma';
 import { dbOperations } from '../../../../lib/db-helpers';
 
 export async function POST(request) {
   try {
+    // TODO: Migrate to Supabase
+    return NextResponse.json({ 
+      error: 'This API is being migrated to Supabase. Please use the new property API.' 
+    }, { status: 503 });
+    
     const data = await request.json();
     
     // Prepare data using helper functions
