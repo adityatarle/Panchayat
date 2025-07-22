@@ -143,6 +143,22 @@ export default function DownloadCertificate() {
     }
   };
 
+  const loadScriptFromCDN = (src) => {
+    return new Promise((resolve, reject) => {
+      // Check if script is already loaded
+      if (document.querySelector(`script[src="${src}"]`)) {
+        resolve();
+        return;
+      }
+      
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+      document.head.appendChild(script);
+    });
+  };
+
   const generateCertificatePDF = async (certificate) => {
     if (!isClient) {
       alert('कृपया थोड़ा इंतजार करें...');
@@ -151,9 +167,47 @@ export default function DownloadCertificate() {
 
     setIsGenerating(true);
     try {
-      // Dynamically import the PDF libraries only on client side
-      const { default: jsPDF } = await import('jspdf');
-      const { default: html2canvas } = await import('html2canvas');
+      // Try to load PDF libraries with fallback options
+      let jsPDF, html2canvas;
+      
+      // First try: Dynamic import from npm packages
+      try {
+        const jsPDFModule = await import('jspdf');
+        jsPDF = jsPDFModule.default || jsPDFModule;
+        console.log('jsPDF loaded from npm package');
+      } catch (error) {
+        console.warn('Failed to load jsPDF from npm, trying CDN fallback:', error);
+        
+        // Second try: Load from CDN
+        try {
+          await loadScriptFromCDN('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+          jsPDF = window.jspdf?.jsPDF || window.jsPDF;
+          if (!jsPDF) throw new Error('jsPDF not available on window');
+          console.log('jsPDF loaded from CDN');
+        } catch (cdnError) {
+          console.error('Failed to load jsPDF from CDN:', cdnError);
+          throw new Error('jsPDF library could not be loaded from any source');
+        }
+      }
+      
+      try {
+        const html2canvasModule = await import('html2canvas');
+        html2canvas = html2canvasModule.default || html2canvasModule;
+        console.log('html2canvas loaded from npm package');
+      } catch (error) {
+        console.warn('Failed to load html2canvas from npm, trying CDN fallback:', error);
+        
+        // Second try: Load from CDN
+        try {
+          await loadScriptFromCDN('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+          html2canvas = window.html2canvas;
+          if (!html2canvas) throw new Error('html2canvas not available on window');
+          console.log('html2canvas loaded from CDN');
+        } catch (cdnError) {
+          console.error('Failed to load html2canvas from CDN:', cdnError);
+          throw new Error('html2canvas library could not be loaded from any source');
+        }
+      }
 
       // Create certificate content
       const certificateElement = document.createElement('div');
@@ -195,13 +249,148 @@ export default function DownloadCertificate() {
       alert('✅ PDF सफलतापूर्वक डाउनलोड हो गया!');
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('PDF जेनरेट करने में त्रुटि हुई। कृपया पुनः प्रयास करें।\n\nError: ' + error.message);
+      
+      // Fallback: Create a simple text certificate
+      try {
+        const textCertificate = generateTextCertificate(certificate);
+        const blob = new Blob([textCertificate], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${certificate.certificateNumber.replace(/\//g, '_')}_${certificate.applicantNameEnglish.replace(/\s+/g, '_')}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        alert('⚠️ PDF generation failed. Certificate downloaded as text file.\nPDF जेनरेट नहीं हो सका। प्रमाणपत्र टेक्स्ट फाइल के रूप में डाउनलोड हुआ।');
+      } catch (fallbackError) {
+        alert('PDF जेनरेट करने में त्रुटि हुई। कृपया पुनः प्रयास करें।\n\nError: ' + error.message);
+      }
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const getCertificateHTML = (certificate) => {
+  const generateTextCertificate = (certificate) => {
+    return `
+🏛️ भारत सरकार | Government of India
+महाराष्ट्र राज्य | State of Maharashtra
+
+${certificate.typeHindi} | ${certificate.type.toUpperCase()}
+═══════════════════════════════════════════════════════════
+
+प्रमाणपत्र संख्या: ${certificate.certificateNumber}
+Certificate Number: ${certificate.certificateNumber}
+
+आवेदक का नाम: ${certificate.applicantName}
+Applicant Name: ${certificate.applicantNameEnglish}
+
+आवेदन संख्या: ${certificate.applicationNumber}
+Application Number: ${certificate.applicationNumber}
+
+जारी करने की तारीख: ${certificate.issueDate}
+Issue Date: ${certificate.issueDate}
+
+जारीकर्ता: ${certificate.issuedBy}
+Issued By: ${certificate.issuedByEnglish}
+
+वैधता: ${certificate.validUpto}
+Validity: ${certificate.validUpto}
+
+${certificate.details ? `
+विवरण | Details:
+${Object.entries(certificate.details).map(([key, value]) => `${key}: ${value}`).join('\n')}
+` : ''}
+
+यह प्रमाणपत्र डिजिटल रूप से जारी किया गया है।
+This certificate is digitally issued.
+
+═══════════════════════════════════════════════════════════
+डाउनलोड तारीख: ${new Date().toLocaleDateString('hi-IN')}
+Download Date: ${new Date().toLocaleDateString('en-IN')}
+         `.trim();
+   };
+
+   const generateCertificateHTML = async (certificate) => {
+     if (!isClient) {
+       alert('कृपया थोड़ा इंतजार करें...');
+       return;
+     }
+
+     setIsGenerating(true);
+     try {
+       // Generate HTML certificate
+       const htmlContent = getCertificateHTML(certificate);
+       const fullHTML = `
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${certificate.typeHindi} - ${certificate.applicantName}</title>
+    <style>
+        body { margin: 0; padding: 20px; font-family: Arial, sans-serif; background: #f0f0f0; }
+        .certificate { background: white; max-width: 800px; margin: 0 auto; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        @media print { body { background: white; } .certificate { box-shadow: none; } }
+    </style>
+</head>
+<body>
+    <div class="certificate">
+        ${htmlContent}
+    </div>
+    <script>
+        // Auto-print functionality
+        window.onload = function() {
+            setTimeout(() => {
+                if (confirm('प्रमाणपत्र प्रिंट करना चाहते हैं? | Do you want to print the certificate?')) {
+                    window.print();
+                }
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
+       `;
+
+       // Create and download HTML file
+       const blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
+       const url = URL.createObjectURL(blob);
+       const a = document.createElement('a');
+       a.href = url;
+       a.download = `${certificate.certificateNumber.replace(/\//g, '_')}_${certificate.applicantNameEnglish.replace(/\s+/g, '_')}.html`;
+       document.body.appendChild(a);
+       a.click();
+       document.body.removeChild(a);
+       URL.revokeObjectURL(url);
+
+       alert('✅ प्रमाणपत्र HTML फाइल के रूप में डाउनलोड हो गया! आप इसे प्रिंट भी कर सकते हैं।\n\nCertificate downloaded as HTML file! You can also print it.');
+     } catch (error) {
+       console.error('Error generating HTML certificate:', error);
+       
+       // Fallback to text certificate
+       try {
+         const textCertificate = generateTextCertificate(certificate);
+         const blob = new Blob([textCertificate], { type: 'text/plain' });
+         const url = URL.createObjectURL(blob);
+         const a = document.createElement('a');
+         a.href = url;
+         a.download = `${certificate.certificateNumber.replace(/\//g, '_')}_${certificate.applicantNameEnglish.replace(/\s+/g, '_')}.txt`;
+         document.body.appendChild(a);
+         a.click();
+         document.body.removeChild(a);
+         URL.revokeObjectURL(url);
+         
+         alert('⚠️ HTML generation failed. Certificate downloaded as text file.\nHTML जेनरेट नहीं हो सका। प्रमाणपत्र टेक्स्ट फाइल के रूप में डाउनलोड हुआ।');
+       } catch (fallbackError) {
+         alert('प्रमाणपत्र डाउनलोड करने में त्रुटि हुई। कृपया पुनः प्रयास करें।\n\nError: ' + error.message);
+       }
+     } finally {
+       setIsGenerating(false);
+     }
+   };
+
+   const getCertificateHTML = (certificate) => {
     const today = new Date().toLocaleDateString('hi-IN');
     
     if (certificate.type === 'Birth Certificate') {
@@ -696,7 +885,7 @@ export default function DownloadCertificate() {
               
               <div className="space-y-4">
                                  <button
-                   onClick={() => generateCertificatePDF(searchResult)}
+                   onClick={() => generateCertificateHTML(searchResult)}
                    disabled={isGenerating || !isClient}
                    className="w-full bg-green-600 text-white px-6 py-4 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                  >
@@ -705,26 +894,35 @@ export default function DownloadCertificate() {
                        <span>⏳</span>
                        <span>लोड हो रहा है...</span>
                      </>
-                   ) : isGenerating ? (
-                     <>
-                       <span className="animate-spin">⏳</span>
-                       <span>PDF जेनरेट हो रहा है...</span>
-                     </>
-                   ) : (
-                     <>
-                       <span>📥</span>
-                       <span>PDF डाउनलोड करें | Download PDF</span>
-                     </>
-                   )}
+                                       ) : isGenerating ? (
+                      <>
+                        <span className="animate-spin">⏳</span>
+                        <span>जेनरेट हो रहा है...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>📥</span>
+                        <span>प्रमाणपत्र डाउनलोड करें | Download Certificate</span>
+                      </>
+                    )}
+                                   </button>
+
+                 <button
+                   onClick={() => generateCertificatePDF(searchResult)}
+                   disabled={isGenerating || !isClient}
+                   className="w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                 >
+                   <span>📄</span>
+                   <span>PDF जेनरेट करने का प्रयास करें | Try PDF Generation</span>
                  </button>
 
-                <button
-                  onClick={() => handleVerify(searchResult)}
-                  className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center space-x-2"
-                >
-                  <span>🔍</span>
-                  <span>सत्यापित करें | Verify</span>
-                </button>
+                 <button
+                   onClick={() => handleVerify(searchResult)}
+                   className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center space-x-2"
+                 >
+                   <span>🔍</span>
+                   <span>सत्यापित करें | Verify</span>
+                 </button>
 
                 <button
                   onClick={() => handleShare(searchResult)}
