@@ -1,21 +1,18 @@
 import { NextResponse } from 'next/server';
-import connectDB from '../../../../lib/mongodb';
-import ResidenceCertificate from '../../../../models/ResidenceCertificate';
+import prisma from '../../../../lib/prisma';
+import { dbOperations } from '../../../../lib/db-helpers';
 
 export async function POST(request) {
   try {
-    await connectDB();
-    
     const data = await request.json();
     
-    // Create new residence certificate application
-    const residenceCertificate = new ResidenceCertificate({
-      ...data,
-      submissionDate: new Date(),
-      status: 'submitted'
-    });
+    // Prepare data using helper functions
+    const createData = dbOperations.prepareResidenceCertificateData(data);
     
-    await residenceCertificate.save();
+    // Create new residence certificate application
+    const residenceCertificate = await prisma.residenceCertificate.create({
+      data: createData
+    });
     
     return NextResponse.json({
       success: true,
@@ -36,29 +33,30 @@ export async function POST(request) {
 
 export async function GET(request) {
   try {
-    await connectDB();
-    
     const { searchParams } = new URL(request.url);
     const applicationId = searchParams.get('applicationId');
     const status = searchParams.get('status');
     const page = parseInt(searchParams.get('page')) || 1;
     const limit = parseInt(searchParams.get('limit')) || 10;
     
-    let query = {};
+    let where = {};
     
     if (applicationId) {
-      query.applicationId = applicationId;
+      where.applicationId = applicationId;
     }
     
     if (status) {
-      query.status = status;
+      where.status = status.toUpperCase();
     }
     
     const skip = (page - 1) * limit;
     
     if (applicationId) {
       // Get specific application
-      const application = await ResidenceCertificate.findOne(query);
+      const application = await prisma.residenceCertificate.findUnique({
+        where: { applicationId }
+      });
+      
       if (!application) {
         return NextResponse.json({
           success: false,
@@ -72,13 +70,14 @@ export async function GET(request) {
       });
     } else {
       // Get all applications with pagination
-      const applications = await ResidenceCertificate.find(query)
-        .sort({ submissionDate: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean();
+      const applications = await prisma.residenceCertificate.findMany({
+        where,
+        orderBy: { submissionDate: 'desc' },
+        skip,
+        take: limit
+      });
       
-      const total = await ResidenceCertificate.countDocuments(query);
+      const total = await prisma.residenceCertificate.count({ where });
       
       return NextResponse.json({
         success: true,
@@ -104,8 +103,6 @@ export async function GET(request) {
 
 export async function PUT(request) {
   try {
-    await connectDB();
-    
     const data = await request.json();
     const { applicationId, ...updateData } = data;
     
@@ -116,18 +113,55 @@ export async function PUT(request) {
       }, { status: 400 });
     }
     
-    const updatedApplication = await ResidenceCertificate.findOneAndUpdate(
-      { applicationId },
-      updateData,
-      { new: true }
-    );
-    
-    if (!updatedApplication) {
-      return NextResponse.json({
-        success: false,
-        message: 'Application not found'
-      }, { status: 404 });
+    // Convert enum fields if present
+    if (updateData.status) {
+      updateData.status = updateData.status.toUpperCase();
     }
+    if (updateData.paymentStatus) {
+      updateData.paymentStatus = updateData.paymentStatus.toUpperCase();
+    }
+    if (updateData.gender) {
+      updateData.gender = updateData.gender.toUpperCase();
+    }
+    if (updateData.caste) {
+      updateData.caste = updateData.caste.toUpperCase();
+    }
+    if (updateData.maritalStatus) {
+      updateData.maritalStatus = updateData.maritalStatus.toUpperCase();
+    }
+    
+    // Convert date fields if present
+    if (updateData.dateOfBirth) {
+      updateData.dateOfBirth = new Date(updateData.dateOfBirth);
+    }
+    if (updateData.residenceSince) {
+      updateData.residenceSince = new Date(updateData.residenceSince);
+    }
+    if (updateData.processingDate) {
+      updateData.processingDate = new Date(updateData.processingDate);
+    }
+    if (updateData.approvalDate) {
+      updateData.approvalDate = new Date(updateData.approvalDate);
+    }
+    
+    // Convert numeric fields if present
+    if (updateData.age) {
+      updateData.age = parseInt(updateData.age);
+    }
+    if (updateData.residenceYears) {
+      updateData.residenceYears = parseInt(updateData.residenceYears);
+    }
+    if (updateData.income) {
+      updateData.income = parseFloat(updateData.income);
+    }
+    if (updateData.paymentAmount) {
+      updateData.paymentAmount = parseFloat(updateData.paymentAmount);
+    }
+    
+    const updatedApplication = await prisma.residenceCertificate.update({
+      where: { applicationId },
+      data: updateData
+    });
     
     return NextResponse.json({
       success: true,
