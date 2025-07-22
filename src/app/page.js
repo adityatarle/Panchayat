@@ -161,6 +161,23 @@ export default function Home() {
       route: '/non-availability-certificate'
     },
     {
+      id: 'malmatta-mahiti',
+      title: {
+        hi: 'मालमत्ता माहिती सेवाएं',
+        mr: 'मालमत्ता माहिती सेवा',
+        en: 'Property Information Services'
+      },
+      description: {
+        hi: 'संपत्ति संबंधी सभी सेवाएं - पंजीकरण, हस्तांतरण, सत्यापन',
+        mr: 'मालमत्ता संबंधित सर्व सेवा - नोंदणी, हस्तांतरण, सत्यापन',
+        en: 'All property-related services - registration, transfer, verification'
+      },
+      icon: '🏘️',
+      bgColor: 'bg-emerald-100',
+      iconColor: 'text-emerald-600',
+      route: '/malmatta-mahiti'
+    },
+    {
       id: 'complaint',
       title: {
         hi: 'शिकायत दर्ज करें',
