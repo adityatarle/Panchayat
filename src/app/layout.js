@@ -1,8 +1,8 @@
 import { Inter, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
-import { LanguageProvider } from "../../contexts/LanguageContext";
-import Header from "../../components/Header";
-import Footer from "../../components/Footer";
+import { LanguageProvider } from "@/contexts/LanguageContext";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 // Government-appropriate fonts
 const inter = Inter({
