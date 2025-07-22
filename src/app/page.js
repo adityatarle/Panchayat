@@ -393,7 +393,7 @@ export default function Home() {
 
       {/* Main Services */}
       <section className="mb-12">
-        <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">{t(homeTexts.mainServicesTitle)}</h3>
+        <h3 className="text-2xl font-bold text-black mb-6 text-center">{t(homeTexts.mainServicesTitle)}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {services.map((service) => (
             <Link key={service.id} href={service.route} className="group">
@@ -406,10 +406,10 @@ export default function Home() {
                     {language === 'hi' ? 'सरकारी सेवा' : language === 'mr' ? 'सरकारी सेवा' : 'Gov Service'}
                   </div>
                 </div>
-                <h4 className="font-bold text-govBlue-800 mb-2 group-hover:text-csc-orange transition-colors">
+                <h4 className="font-bold text-black mb-2 group-hover:text-csc-orange transition-colors">
                   {t(service.title)}
                 </h4>
-                <p className="text-xs text-gray-600 leading-relaxed mb-3">
+                <p className="text-xs text-black leading-relaxed mb-3">
                   {t(service.description)}
                 </p>
                 
@@ -432,23 +432,23 @@ export default function Home() {
       {/* Statistics */}
       <section className="mb-12">
         <div className="bg-white rounded-lg p-8 shadow-sm border border-gray-100">
-          <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">{t(homeTexts.statisticsTitle)}</h3>
+          <h3 className="text-2xl font-bold text-black mb-6 text-center">{t(homeTexts.statisticsTitle)}</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div className="text-center">
-              <div className="text-3xl font-bold text-primary-600 mb-2">25,847</div>
-              <div className="text-sm text-gray-600">{t(homeTexts.issuedCerts)}</div>
+              <div className="text-3xl font-bold text-csc-orange mb-2">25,847</div>
+              <div className="text-sm text-black">{t(homeTexts.issuedCerts)}</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-green-600 mb-2">98.5%</div>
-              <div className="text-sm text-gray-600">{t(homeTexts.satisfactionRate)}</div>
+              <div className="text-3xl font-bold text-green mb-2">98.5%</div>
+              <div className="text-sm text-black">{t(homeTexts.satisfactionRate)}</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-orange-600 mb-2">{language === 'hi' ? '2.5 दिन' : language === 'mr' ? '2.5 दिवस' : '2.5 days'}</div>
-              <div className="text-sm text-gray-600">{t(homeTexts.avgProcessing)}</div>
+              <div className="text-sm text-black">{t(homeTexts.avgProcessing)}</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-cyan-600 mb-2">15,692</div>
-              <div className="text-sm text-gray-600">{t(homeTexts.registeredCitizens)}</div>
+              <div className="text-sm text-black">{t(homeTexts.registeredCitizens)}</div>
             </div>
           </div>
         </div>

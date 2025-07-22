@@ -7,7 +7,7 @@
 
 :root {
   --background: #f9fafb;
-  --foreground: #111827;
+  --foreground: #000000;
   --gov-blue: #1e3a8a;
   --gov-orange: #FF6600;
   --saffron: #FF9933;
@@ -24,7 +24,7 @@
 }
 
 body {
-  color: var(--foreground);
+  color: #000000;
   background: var(--background);
   font-family: 'Inter', 'Noto Sans Devanagari', Arial, Helvetica, sans-serif;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
