@@ -137,6 +137,61 @@ export default function MalmattaMahitiDetail() {
     }
   };
 
+  const handleSubmit = async () => {
+    try {
+      const response = await fetch('/api/property', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          propertyHolderData,
+          propertyDescriptions: tableData
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert('मालमत्ता माहिती यशस्वीरित्या जतन झाली!');
+        // Reset forms
+        setPropertyHolderData({
+          serialNo: '',
+          period: '',
+          villageName: '',
+          propertyGroupEconomicCategory: '',
+          propertyNo: '',
+          wardNoGroupNo: '',
+          propertyActivityNo: '',
+          streetNameLaneNo: '',
+          address: '',
+          propertyHolderName: '',
+          propertyHolderNameEnglish: '',
+          aadharNo: '',
+          mobileNo: '',
+          waterSupply: '',
+          permanentAccountNo: '',
+          tapNumber: '',
+          groupNoResidentNo: '',
+          toilet: '',
+          planTax: false,
+          diwaliTax: false,
+          diwanAgam: false,
+          workingInDefenseArea: false,
+          midc: false,
+          specialPropertyRegistration: false
+        });
+        setTableData([]);
+        handleNew();
+      } else {
+        alert('त्रुटी: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error submitting data:', error);
+      alert('डेटा सबमिट करताना त्रुटी झाली. कृपया पुन्हा प्रयत्न करा.');
+    }
+  };
+
   const pageTexts = {
     title: {
       hi: 'मालमत्ता माहिती',
@@ -846,6 +901,24 @@ export default function MalmattaMahitiDetail() {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        {/* Submit Section */}
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+          <div className="flex flex-col md:flex-row gap-4 justify-center">
+            <button
+              onClick={handleSubmit}
+              className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              संपूर्ण माहिती जतन करा (Save Complete Information)
+            </button>
+            <button
+              onClick={handleExit}
+              className="px-8 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
+            >
+              रद्द करा (Cancel)
+            </button>
           </div>
         </div>
       </div>
