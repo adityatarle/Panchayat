@@ -53,10 +53,10 @@ export default function Header() {
                   <h1 className="text-xl md:text-2xl font-bold text-govBlue-800">
                     ग्राम पंचायत डिजिटल सेवा केंद्र
                   </h1>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-black">
                     Gram Panchayat Digital Service Center
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-black">
                     महाराष्ट्र सरकार | Government of Maharashtra
                   </p>
                 </div>
@@ -66,13 +66,13 @@ export default function Header() {
               <div className="hidden md:flex items-center space-x-6">
                 <div className="text-center">
                   <div className="w-12 h-12 bg-india-flag rounded-full mx-auto mb-1"></div>
-                  <p className="text-xs text-gray-600">सत्यमेव जयते</p>
+                  <p className="text-xs text-black">सत्यमेव जयते</p>
                 </div>
                 <div className="text-center">
                   <div className="w-12 h-12 bg-csc-orange rounded flex items-center justify-center">
                     <span className="text-white text-sm font-bold">DI</span>
                   </div>
-                  <p className="text-xs text-gray-600">Digital India</p>
+                  <p className="text-xs text-black">Digital India</p>
                 </div>
               </div>
             </div>
@@ -103,7 +103,7 @@ export default function Header() {
                     placeholder={language === 'hi' ? 'खोजें...' : language === 'mr' ? 'शोधा...' : 'Search...'}
                     className="bg-transparent text-sm outline-none w-32"
                   />
-                  <button className="text-gray-500">🔍</button>
+                  <button className="text-black">🔍</button>
                 </div>
 
                 {/* Language Selector */}
