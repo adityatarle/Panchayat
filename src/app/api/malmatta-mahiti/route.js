@@ -6,7 +6,7 @@ export async function POST(request) {
   try {
     const data = await request.json();
     
-    // Prepare data using helper functions
+    // Prepare main application data
     const createData = dbOperations.prepareMalmattaMahitiData(data);
     
     // Create new malmatta mahiti application
@@ -14,11 +14,35 @@ export async function POST(request) {
       data: createData
     });
     
+    // Handle property descriptions if provided
+    if (data.propertyDescriptions && Array.isArray(data.propertyDescriptions) && data.propertyDescriptions.length > 0) {
+      const propertyDescriptionsData = dbOperations.preparePropertyDescriptionData(
+        data.propertyDescriptions, 
+        malmattaApplication.id
+      );
+      
+      if (propertyDescriptionsData.length > 0) {
+        await prisma.propertyDescription.createMany({
+          data: propertyDescriptionsData
+        });
+      }
+    }
+    
+    // Fetch the complete application with property descriptions
+    const completeApplication = await prisma.malmattaMahiti.findUnique({
+      where: { id: malmattaApplication.id },
+      include: {
+        propertyDescriptions: {
+          orderBy: { serialNo: 'asc' }
+        }
+      }
+    });
+    
     return NextResponse.json({
       success: true,
       message: 'Malmatta Mahiti application submitted successfully',
       applicationId: malmattaApplication.applicationId,
-      data: malmattaApplication
+      data: completeApplication
     }, { status: 201 });
     
   } catch (error) {
@@ -61,6 +85,9 @@ export async function GET(request) {
       const application = await prisma.malmattaMahiti.findUnique({
         where: { applicationId },
         include: {
+          propertyDescriptions: {
+            orderBy: { serialNo: 'asc' }
+          },
           communicationHistory: {
             orderBy: { createdAt: 'desc' }
           }
@@ -86,6 +113,9 @@ export async function GET(request) {
         skip,
         take: limit,
         include: {
+          propertyDescriptions: {
+            orderBy: { serialNo: 'asc' }
+          },
           communicationHistory: {
             take: 1,
             orderBy: { createdAt: 'desc' }
@@ -192,10 +222,45 @@ export async function PUT(request) {
       updateData.paymentAmount = parseFloat(updateData.paymentAmount);
     }
     
+    // Handle property descriptions update if provided
+    if (updateData.propertyDescriptions && Array.isArray(updateData.propertyDescriptions)) {
+      // First get the application to get its ID
+      const existingApp = await prisma.malmattaMahiti.findUnique({
+        where: { applicationId }
+      });
+      
+      if (existingApp) {
+        // Delete existing property descriptions
+        await prisma.propertyDescription.deleteMany({
+          where: { malmattaMahitiId: existingApp.id }
+        });
+        
+        // Create new property descriptions
+        if (updateData.propertyDescriptions.length > 0) {
+          const propertyDescriptionsData = dbOperations.preparePropertyDescriptionData(
+            updateData.propertyDescriptions, 
+            existingApp.id
+          );
+          
+          if (propertyDescriptionsData.length > 0) {
+            await prisma.propertyDescription.createMany({
+              data: propertyDescriptionsData
+            });
+          }
+        }
+      }
+      
+      // Remove propertyDescriptions from updateData as it's not a direct field
+      delete updateData.propertyDescriptions;
+    }
+
     const updatedApplication = await prisma.malmattaMahiti.update({
       where: { applicationId },
       data: updateData,
       include: {
+        propertyDescriptions: {
+          orderBy: { serialNo: 'asc' }
+        },
         communicationHistory: {
           orderBy: { createdAt: 'desc' }
         }

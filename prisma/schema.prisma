@@ -412,26 +412,51 @@ model MalmattaMahiti {
   // Service Type
   serviceType       ServiceType
   
-  // Property Details
-  propertyNumber    String?
+  // मालमत्ता धारकाची माहिती (Property Holder Information)
+  serialNo          String?           // अ.क्र.
+  period            String?           // कालावधी
+  villageName       String?           // गावाचे नाव
+  propertyGroupEconomicCategory String? // मालमत्ता गट आर्थिक वर्ग
+  propertyNumber    String?           // मालमत्ता क्रमांक
+  wardNo            String?           // वार्ड नं.
+  groupNo           String?           // गट नं.
+  propertyActivityNo String?          // मालमत्ता उपक्रम क्र.
+  streetName        String?           // रस्त्याचे नाव
+  laneNo            String?           // गल्ली क्र.
+  address           String?           // पत्‍ता
+  propertyHolderName String?          // मालमत्ता धारकाचे नाव
+  propertyHolderNameEnglish String?   // मालमत्ता धारकाचे नाव (ENGLISH)
+  aadharNumber      String?           // आधार क्रमांक
+  mobileNumber      String?           // मोबाइल क्रमांक
+  waterSupply       String?           // पाणीपुरवठा
+  permanentAccountNumber String?      // स्थायी खाते क्रमांक
+  tapNumber         String?           // नळ क्रमांक
+  residentNumber    String?           // रहिवासी क्र.
+  toilet            String?           // शौचालय
+  
+  // Checkboxes (Right side options)
+  planTax           Boolean           @default(false) // आराखडा कर
+  diwaliTax         Boolean           @default(false) // दिवाळी कर
+  diwanAgam         Boolean           @default(false) // दिवाण/अगम
+  defenseArea       Boolean           @default(false) // संरक्षण क्षेत्रात काम करत असल्याचे
+  midc              Boolean           @default(false) // महाराष्ट्र औद्योगिक विकास महामंडळ
+  specialProperty   Boolean           @default(false) // विशेष प्रकारची मालमत्ता असल्यास नोंदणी करावी
+  
+  // मालमत्तेचे वर्णन (Property Description) - Multiple entries possible
+  propertyDescriptions PropertyDescription[]
+  
+  // Legacy fields for compatibility
   surveyNumber      String?
   subdividedNumber  String?
   plotNumber        String?
-  
-  // Property Location
-  village           String?
   taluka            String?
   district          String            @default("Maharashtra")
   state             String            @default("Maharashtra")
   pincode           String?
-  
-  // Owner Details (Current)
   ownerName         String?
   ownerNameMarathi  String?
   fatherName        String?
   motherName        String?
-  aadharNumber      String?
-  mobileNumber      String?
   email             String?
   
   // New Owner Details (for name registration/transfer services)
@@ -523,6 +548,40 @@ model MalmattaMahiti {
   updatedAt         DateTime          @updatedAt
   
   @@map("malmatta_mahiti")
+}
+
+// Property Description Model for multiple property details
+model PropertyDescription {
+  id                String           @id @default(cuid())
+  malmattaMahitiId  String
+  malmattaMahiti    MalmattaMahiti   @relation(fields: [malmattaMahitiId], references: [id], onDelete: Cascade)
+  
+  // मालमत्तेचे वर्णन (Property Description)
+  serialNo          Int              // मि.नं.
+  propertyType      String?          // मि.प्रकार
+  otherPropertyInfo String?          // मि. इतर माहिती
+  floor             String?          // मजला
+  areaForPerson     Float?           // इसमासाठी क्षेत्रफळ
+  tank              String?          // टाकी
+  length            Float?           // लांबी
+  width             Float?           // रूंदी
+  area              Float?           // क्षेत्रफळ
+  usage             String?          // वापर
+  propertyAssessmentCategory String? // मालमत्ता आकारणी प्रमाणे वर्ग
+  assessmentYear    String?          // मालमत्ता आकारणी वर्ष
+  landAssessmentRatePerSqm Float?    // जमिनीचा आकारणी दर प्रती चौ.मी.
+  landRate          Float?           // जमिनीचा दर
+  rateType          String?          // दरप्रकार कर दर प्रकार
+  shopRatePerSqft   Float?           // गाळ्याचे दर प्रती चौ.फू.
+  shopRatePerSqm    Float?           // गाळ्याचे दर प्रती चौ.मी
+  taxAssessmentType String?          // टॅक्स आकारणी प्रकार
+  subdivision       String?          // उपविभाग
+  rebateExemption   String?          // सुटका
+  
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  
+  @@map("property_descriptions")
 }
 
 // Communication Log Model

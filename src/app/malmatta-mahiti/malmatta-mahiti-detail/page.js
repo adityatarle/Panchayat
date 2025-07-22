@@ -6,44 +6,81 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function MalmattaMahitiDetail() {
   const { language, t } = useLanguage();
+  
   const [formData, setFormData] = useState({
-    // Property Details
+    // मालमत्ता धारकाची माहिती (Property Holder Information)
+    serialNo: '',
+    period: '',
+    villageName: '',
+    propertyGroupEconomicCategory: '',
     propertyNumber: '',
+    wardNo: '',
+    groupNo: '',
+    propertyActivityNo: '',
+    streetName: '',
+    laneNo: '',
+    address: '',
+    propertyHolderName: '',
+    propertyHolderNameEnglish: '',
+    aadharNumber: '',
+    mobileNumber: '',
+    waterSupply: '',
+    permanentAccountNumber: '',
+    tapNumber: '',
+    residentNumber: '',
+    toilet: '',
+    
+    // Checkboxes (Right side options)
+    planTax: false,
+    diwaliTax: false,
+    diwanAgam: false,
+    defenseArea: false,
+    midc: false,
+    specialProperty: false,
+    
+    // Legacy fields for compatibility
     surveyNumber: '',
     subdividedNumber: '',
     plotNumber: '',
-    
-    // Property Location
     village: '',
     taluka: '',
     district: 'Maharashtra',
     state: 'Maharashtra',
     pincode: '',
-    
-    // Owner Details
     ownerName: '',
     ownerNameMarathi: '',
     fatherName: '',
     motherName: '',
-    aadharNumber: '',
-    mobileNumber: '',
     email: '',
     
-    // Property Information
-    propertyType: '',
-    propertyUsage: '',
-    totalArea: '',
-    builtUpArea: '',
-    yearOfConstruction: '',
-    
-    // Revenue Details
-    classOfLand: '',
-    typeOfTenure: '',
-    revenueRecordNumber: '',
-    
-    // Purpose and Documents
-    purpose: ''
+    // Purpose
+    purpose: 'Property Information',
+    purposeDescription: ''
   });
+
+  const [propertyDescriptions, setPropertyDescriptions] = useState([
+    {
+      propertyType: '',
+      otherPropertyInfo: '',
+      floor: '',
+      areaForPerson: '',
+      tank: '',
+      length: '',
+      width: '',
+      area: '',
+      usage: '',
+      propertyAssessmentCategory: '',
+      assessmentYear: '',
+      landAssessmentRatePerSqm: '',
+      landRate: '',
+      rateType: '',
+      shopRatePerSqft: '',
+      shopRatePerSqm: '',
+      taxAssessmentType: '',
+      subdivision: '',
+      rebateExemption: ''
+    }
+  ]);
 
   const [documents, setDocuments] = useState({
     aadharCard: null,
@@ -55,12 +92,52 @@ export default function MalmattaMahitiDetail() {
     taxReceipt: null
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
+  };
+
+  const handlePropertyDescriptionChange = (index, field, value) => {
+    setPropertyDescriptions(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  const addPropertyDescription = () => {
+    setPropertyDescriptions(prev => [...prev, {
+      propertyType: '',
+      otherPropertyInfo: '',
+      floor: '',
+      areaForPerson: '',
+      tank: '',
+      length: '',
+      width: '',
+      area: '',
+      usage: '',
+      propertyAssessmentCategory: '',
+      assessmentYear: '',
+      landAssessmentRatePerSqm: '',
+      landRate: '',
+      rateType: '',
+      shopRatePerSqft: '',
+      shopRatePerSqm: '',
+      taxAssessmentType: '',
+      subdivision: '',
+      rebateExemption: ''
+    }]);
+  };
+
+  const removePropertyDescription = (index) => {
+    if (propertyDescriptions.length > 1) {
+      setPropertyDescriptions(prev => prev.filter((_, i) => i !== index));
+    }
   };
 
   const handleFileChange = (e) => {
@@ -74,14 +151,16 @@ export default function MalmattaMahitiDetail() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
     try {
       const submitData = {
         ...formData,
+        propertyDescriptions: propertyDescriptions,
         documents: documents,
         serviceType: 'property-information'
       };
-      
+
       const response = await fetch('/api/malmatta-mahiti', {
         method: 'POST',
         headers: {
@@ -89,495 +168,772 @@ export default function MalmattaMahitiDetail() {
         },
         body: JSON.stringify(submitData)
       });
-      
+
       const result = await response.json();
       
       if (result.success) {
         alert(`मालमत्ता माहिती अर्ज सफलतापूर्वक जमा झाला! आपला अर्ज क्रमांक: ${result.applicationId}`);
         // Reset form or redirect to success page
+        window.location.href = '/malmatta-mahiti';
       } else {
         alert(`अर्ज जमा करण्यात त्रुटी: ${result.message}`);
       }
-      
     } catch (error) {
       console.error('Submission error:', error);
       alert('अर्ज जमा करण्यात त्रुटी झाली. कृपया पुन्हा प्रयत्न करा.');
-    }
-  };
-
-  const pageTexts = {
-    title: {
-      hi: 'मालमत्तेची माहिती',
-      mr: 'मालमत्तेची माहिती',
-      en: 'Property Information'
-    },
-    subtitle: {
-      hi: 'संपत्ति की विस्तृत जानकारी प्राप्त करें',
-      mr: 'मालमत्तेची तपशीलवार माहिती मिळवा',
-      en: 'Get detailed property information'
-    },
-    backToModule: {
-      hi: '← मालमत्ता सेवाओं में वापस जाएं',
-      mr: '← मालमत्ता सेवांकडे परत जा',
-      en: '← Back to Property Services'
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
-        <div className="flex items-center justify-between mb-4">
-          <Link href="/malmatta-mahiti" className="text-primary-600 hover:text-primary-700 flex items-center">
-            {t(pageTexts.backToModule)}
-          </Link>
-          <div className="text-sm text-gray-500">
-            आवेदन शुल्क: ₹50
-          </div>
-        </div>
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">{t(pageTexts.title)}</h1>
-        <p className="text-gray-600">{t(pageTexts.subtitle)}</p>
-      </div>
-
-      {/* Important Instructions */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
-        <h2 className="text-lg font-bold text-yellow-800 mb-3">महत्वपूर्ण निर्देश | Important Instructions</h2>
-        <ul className="space-y-2 text-sm text-yellow-700">
-          <li>• मालमत्तेचा सर्व्हे नंबर किंवा प्लॉट नंबर अचूक असावा</li>
-          <li>• Property survey number or plot number should be accurate</li>
-          <li>• सर्व कागदपत्रे स्पष्ट आणि वाचण्यायोग्य असावीत</li>
-          <li>• मालमत्ता सत्यापनासाठी स्थानिक तपासणी केली जाईल</li>
-          <li>• माहिती मिळण्यासाठी 3-7 कार्य दिवस लागू शकतात</li>
-        </ul>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Property Details */}
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
-          <h2 className="text-xl font-bold text-gray-800 mb-6 border-b pb-2">मालमत्ता तपशील | Property Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                मालमत्ता नंबर *
-              </label>
-              <input
-                type="text"
-                name="propertyNumber"
-                value={formData.propertyNumber}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                required
-                placeholder="Property Number"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                सर्व्हे नंबर *
-              </label>
-              <input
-                type="text"
-                name="surveyNumber"
-                value={formData.surveyNumber}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                required
-                placeholder="Survey Number"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                उपविभाग नंबर
-              </label>
-              <input
-                type="text"
-                name="subdividedNumber"
-                value={formData.subdividedNumber}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Subdivided Number"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                प्लॉट नंबर
-              </label>
-              <input
-                type="text"
-                name="plotNumber"
-                value={formData.plotNumber}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Plot Number"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Location Details */}
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
-          <h2 className="text-xl font-bold text-gray-800 mb-6 border-b pb-2">स्थान तपशील | Location Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                गाव *
-              </label>
-              <input
-                type="text"
-                name="village"
-                value={formData.village}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                required
-                placeholder="Village Name"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                तालुका *
-              </label>
-              <input
-                type="text"
-                name="taluka"
-                value={formData.taluka}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                required
-                placeholder="Taluka Name"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                जिल्हा *
-              </label>
-              <input
-                type="text"
-                name="district"
-                value={formData.district}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                required
-                placeholder="District Name"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                पिन कोड *
-              </label>
-              <input
-                type="text"
-                name="pincode"
-                value={formData.pincode}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                required
-                pattern="[0-9]{6}"
-                placeholder="Pin Code"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Owner Details */}
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
-          <h2 className="text-xl font-bold text-gray-800 mb-6 border-b pb-2">मालक तपशील | Owner Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                मालकाचे नाव (इंग्रजी) *
-              </label>
-              <input
-                type="text"
-                name="ownerName"
-                value={formData.ownerName}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                required
-                placeholder="Owner Name in English"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                मालकाचे नाव (मराठी)
-              </label>
-              <input
-                type="text"
-                name="ownerNameMarathi"
-                value={formData.ownerNameMarathi}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Owner Name in Marathi"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                वडिलांचे नाव *
-              </label>
-              <input
-                type="text"
-                name="fatherName"
-                value={formData.fatherName}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                required
-                placeholder="Father's Name"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                आधार नंबर *
-              </label>
-              <input
-                type="text"
-                name="aadharNumber"
-                value={formData.aadharNumber}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                required
-                pattern="[0-9]{12}"
-                placeholder="12 digit Aadhar Number"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                मोबाइल नंबर *
-              </label>
-              <input
-                type="tel"
-                name="mobileNumber"
-                value={formData.mobileNumber}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                required
-                pattern="[0-9]{10}"
-                placeholder="10 digit Mobile Number"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                ईमेल आयडी
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Email ID"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Property Information */}
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
-          <h2 className="text-xl font-bold text-gray-800 mb-6 border-b pb-2">मालमत्ता माहिती | Property Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                मालमत्तेचा प्रकार *
-              </label>
-              <select
-                name="propertyType"
-                value={formData.propertyType}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                required
-              >
-                <option value="">निवडा</option>
-                <option value="Residential">निवासी / Residential</option>
-                <option value="Commercial">व्यावसायिक / Commercial</option>
-                <option value="Agricultural">कृषी / Agricultural</option>
-                <option value="Industrial">औद्योगिक / Industrial</option>
-                <option value="Plot">प्लॉट / Plot</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                मालमत्तेचा वापर
-              </label>
-              <select
-                name="propertyUsage"
-                value={formData.propertyUsage}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="">निवडा</option>
-                <option value="Self Occupied">स्वतःच्या वापरासाठी</option>
-                <option value="Rented">भाड्याने दिले</option>
-                <option value="Vacant">रिकामे</option>
-                <option value="Under Construction">बांधकाम चालू</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                एकूण क्षेत्रफळ (चौ.फूट)
-              </label>
-              <input
-                type="number"
-                name="totalArea"
-                value={formData.totalArea}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Total Area in Sq.Ft"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                बांधकाम क्षेत्रफळ (चौ.फूट)
-              </label>
-              <input
-                type="number"
-                name="builtUpArea"
-                value={formData.builtUpArea}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Built-up Area in Sq.Ft"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                बांधकामाचे वर्ष
-              </label>
-              <input
-                type="number"
-                name="yearOfConstruction"
-                value={formData.yearOfConstruction}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Year of Construction"
-                min="1900"
-                max="2024"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                माहितीचा हेतू *
-              </label>
-              <select
-                name="purpose"
-                value={formData.purpose}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                required
-              >
-                <option value="">निवडा</option>
-                <option value="Bank Loan">बँक कर्जासाठी</option>
-                <option value="Legal Matters">कायदेशीर कामासाठी</option>
-                <option value="Sale/Purchase">विक्री/खरेदीसाठी</option>
-                <option value="Tax Assessment">कर निर्धारणासाठी</option>
-                <option value="Other">इतर</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Document Upload */}
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
-          <h2 className="text-xl font-bold text-gray-800 mb-6 border-b pb-2">आवश्यक कागदपत्रे | Required Documents</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                आधार कार्ड *
-              </label>
-              <input
-                type="file"
-                name="aadharCard"
-                onChange={handleFileChange}
-                accept=".pdf,.jpg,.jpeg,.png"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                मालमत्ता कार्ड
-              </label>
-              <input
-                type="file"
-                name="propertyCard"
-                onChange={handleFileChange}
-                accept=".pdf,.jpg,.jpeg,.png"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                ७/१२ उतारा
-              </label>
-              <input
-                type="file"
-                name="sevenTwelve"
-                onChange={handleFileChange}
-                accept=".pdf,.jpg,.jpeg,.png"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                ८-अ उतारा
-              </label>
-              <input
-                type="file"
-                name="eightA"
-                onChange={handleFileChange}
-                accept=".pdf,.jpg,.jpeg,.png"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                विक्री खत
-              </label>
-              <input
-                type="file"
-                name="salesDeed"
-                onChange={handleFileChange}
-                accept=".pdf,.jpg,.jpeg,.png"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                कर पावती
-              </label>
-              <input
-                type="file"
-                name="taxReceipt"
-                onChange={handleFileChange}
-                accept=".pdf,.jpg,.jpeg,.png"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Submit Section */}
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
           <div className="flex items-center mb-4">
-            <input
-              type="checkbox"
-              id="terms"
-              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-              required
-            />
-            <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
-              मी घोषणा करतो/करते की वरील सर्व माहिती सत्य आहे आणि मी या मालमत्तेचा वास्तविक मालक/हक्कदार आहे. 
-              जर कोणतीही माहिती चुकीची आढळली तर मी त्याची जबाबदारी घेतो/घेते.
-            </label>
-          </div>
-          <div className="flex flex-col md:flex-row gap-4">
-            <button
-              type="submit"
-              className="btn-primary flex-1"
-            >
-              अर्ज जमा करा (Submit Application)
-            </button>
-            <Link href="/malmatta-mahiti" className="btn-secondary text-center flex-1">
-              रद्द करा (Cancel)
+            <Link href="/malmatta-mahiti" className="text-blue-600 hover:text-blue-800 mr-4">
+              ← परत जा
             </Link>
+            <h1 className="text-3xl font-bold text-gray-900">मालमत्तेची माहिती</h1>
           </div>
+          <p className="text-gray-600">मालमत्ता संबंधी संपूर्ण माहिती प्राप्त करण्यासाठी खालील फॉर्म भरा</p>
         </div>
-      </form>
+
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* मालमत्ता धारकाची माहिती (Property Holder Information) */}
+          <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+            <div className="px-6 py-4 bg-blue-600 text-white">
+              <h2 className="text-xl font-semibold">मालमत्ता धारकाची माहिती (Property Holder Information)</h2>
+            </div>
+            
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Main Form Fields */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    अ.क्र. (Serial No.)
+                  </label>
+                  <input
+                    type="text"
+                    name="serialNo"
+                    value={formData.serialNo}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    कालावधी (Period)
+                  </label>
+                  <input
+                    type="text"
+                    name="period"
+                    value={formData.period}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    गावाचे नाव (Village Name) *
+                  </label>
+                  <input
+                    type="text"
+                    name="villageName"
+                    value={formData.villageName}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    मालमत्ता गट आर्थिक वर्ग (Property Group Economic Category)
+                  </label>
+                  <input
+                    type="text"
+                    name="propertyGroupEconomicCategory"
+                    value={formData.propertyGroupEconomicCategory}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    मालमत्ता क्रमांक (Property No.) *
+                  </label>
+                  <input
+                    type="text"
+                    name="propertyNumber"
+                    value={formData.propertyNumber}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    वार्ड नं. (Ward No.)
+                  </label>
+                  <input
+                    type="text"
+                    name="wardNo"
+                    value={formData.wardNo}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    गट नं. (Group No.)
+                  </label>
+                  <input
+                    type="text"
+                    name="groupNo"
+                    value={formData.groupNo}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    मालमत्ता उपक्रम क्र. (Property Activity No.)
+                  </label>
+                  <input
+                    type="text"
+                    name="propertyActivityNo"
+                    value={formData.propertyActivityNo}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    रस्त्याचे नाव (Street Name)
+                  </label>
+                  <input
+                    type="text"
+                    name="streetName"
+                    value={formData.streetName}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    गल्ली क्र. (Lane No.)
+                  </label>
+                  <input
+                    type="text"
+                    name="laneNo"
+                    value={formData.laneNo}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    पत्‍ता (Address) *
+                  </label>
+                  <textarea
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    required
+                    rows="3"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    मालमत्ता धारकाचे नाव (Property Holder's Name) *
+                  </label>
+                  <input
+                    type="text"
+                    name="propertyHolderName"
+                    value={formData.propertyHolderName}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    मालमत्ता धारकाचे नाव (ENGLISH) *
+                  </label>
+                  <input
+                    type="text"
+                    name="propertyHolderNameEnglish"
+                    value={formData.propertyHolderNameEnglish}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    आधार क्रमांक (Aadhaar No.) *
+                  </label>
+                  <input
+                    type="text"
+                    name="aadharNumber"
+                    value={formData.aadharNumber}
+                    onChange={handleInputChange}
+                    required
+                    pattern="[0-9]{12}"
+                    maxLength="12"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    मोबाइल क्रमांक (Mobile No.) *
+                  </label>
+                  <input
+                    type="tel"
+                    name="mobileNumber"
+                    value={formData.mobileNumber}
+                    onChange={handleInputChange}
+                    required
+                    pattern="[0-9]{10}"
+                    maxLength="10"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    पाणीपुरवठा (Water Supply)
+                  </label>
+                  <select
+                    name="waterSupply"
+                    value={formData.waterSupply}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">निवडा</option>
+                    <option value="आहे">आहे</option>
+                    <option value="नाही">नाही</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    स्थायी खाते क्रमांक (Permanent Account Number)
+                  </label>
+                  <input
+                    type="text"
+                    name="permanentAccountNumber"
+                    value={formData.permanentAccountNumber}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    नळ क्रमांक (Tap Number)
+                  </label>
+                  <input
+                    type="text"
+                    name="tapNumber"
+                    value={formData.tapNumber}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    रहिवासी क्र. (Resident No.)
+                  </label>
+                  <input
+                    type="text"
+                    name="residentNumber"
+                    value={formData.residentNumber}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    शौचालय (Toilet)
+                  </label>
+                  <select
+                    name="toilet"
+                    value={formData.toilet}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">निवडा</option>
+                    <option value="आहे">आहे</option>
+                    <option value="नाही">नाही</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Checkboxes Section */}
+              <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">अतिरिक्त माहिती</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="planTax"
+                      id="planTax"
+                      checked={formData.planTax}
+                      onChange={handleInputChange}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="planTax" className="ml-2 block text-sm text-gray-700">
+                      आराखडा कर (Plan Tax)
+                    </label>
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="diwaliTax"
+                      id="diwaliTax"
+                      checked={formData.diwaliTax}
+                      onChange={handleInputChange}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="diwaliTax" className="ml-2 block text-sm text-gray-700">
+                      दिवाळी कर (Diwali Tax)
+                    </label>
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="diwanAgam"
+                      id="diwanAgam"
+                      checked={formData.diwanAgam}
+                      onChange={handleInputChange}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="diwanAgam" className="ml-2 block text-sm text-gray-700">
+                      दिवाण/अगम (Diwan/Agam)
+                    </label>
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="defenseArea"
+                      id="defenseArea"
+                      checked={formData.defenseArea}
+                      onChange={handleInputChange}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="defenseArea" className="ml-2 block text-sm text-gray-700">
+                      संरक्षण क्षेत्रात काम (Working in Defense Area)
+                    </label>
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="midc"
+                      id="midc"
+                      checked={formData.midc}
+                      onChange={handleInputChange}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="midc" className="ml-2 block text-sm text-gray-700">
+                      MIDC
+                    </label>
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="specialProperty"
+                      id="specialProperty"
+                      checked={formData.specialProperty}
+                      onChange={handleInputChange}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="specialProperty" className="ml-2 block text-sm text-gray-700">
+                      विशेष प्रकारची मालमत्ता (Special Property)
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* मालमत्तेचे वर्णन (Property Description) */}
+          <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+            <div className="px-6 py-4 bg-green-600 text-white flex justify-between items-center">
+              <h2 className="text-xl font-semibold">मालमत्तेचे वर्णन (Property Description)</h2>
+              <button
+                type="button"
+                onClick={addPropertyDescription}
+                className="bg-green-700 hover:bg-green-800 px-4 py-2 rounded text-sm font-medium"
+              >
+                नवीन (New)
+              </button>
+            </div>
+            
+            <div className="p-6">
+              {propertyDescriptions.map((desc, index) => (
+                <div key={index} className="mb-8 p-4 border border-gray-200 rounded-lg">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-medium text-gray-900">
+                      मालमत्ता वर्णन #{index + 1}
+                    </h3>
+                    {propertyDescriptions.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removePropertyDescription(index)}
+                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
+                      >
+                        काढून टाका (Remove)
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        मि.प्रकार (Property Type)
+                      </label>
+                      <input
+                        type="text"
+                        value={desc.propertyType}
+                        onChange={(e) => handlePropertyDescriptionChange(index, 'propertyType', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        मि. इतर माहिती (Other Info)
+                      </label>
+                      <input
+                        type="text"
+                        value={desc.otherPropertyInfo}
+                        onChange={(e) => handlePropertyDescriptionChange(index, 'otherPropertyInfo', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        मजला (Floor)
+                      </label>
+                      <input
+                        type="text"
+                        value={desc.floor}
+                        onChange={(e) => handlePropertyDescriptionChange(index, 'floor', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        लांबी (Length)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={desc.length}
+                        onChange={(e) => handlePropertyDescriptionChange(index, 'length', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        रूंदी (Width)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={desc.width}
+                        onChange={(e) => handlePropertyDescriptionChange(index, 'width', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        क्षेत्रफळ (Area)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={desc.area}
+                        onChange={(e) => handlePropertyDescriptionChange(index, 'area', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        वापर (Usage)
+                      </label>
+                      <input
+                        type="text"
+                        value={desc.usage}
+                        onChange={(e) => handlePropertyDescriptionChange(index, 'usage', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        आकारणी वर्ष (Assessment Year)
+                      </label>
+                      <input
+                        type="text"
+                        value={desc.assessmentYear}
+                        onChange={(e) => handlePropertyDescriptionChange(index, 'assessmentYear', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        कर दर प्रकार (Tax Rate Type)
+                      </label>
+                      <input
+                        type="text"
+                        value={desc.rateType}
+                        onChange={(e) => handlePropertyDescriptionChange(index, 'rateType', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        सुटका (Rebate/Exemption)
+                      </label>
+                      <input
+                        type="text"
+                        value={desc.rebateExemption}
+                        onChange={(e) => handlePropertyDescriptionChange(index, 'rebateExemption', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Property Descriptions Table */}
+              <div className="mt-8 overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        मि. नं.
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        मि. प्रकार
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        मजला
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        लांबी
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        रूंदी
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        क्षेत्रफळ
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        वापर
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        आकारणी वर्ष
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        सुटका
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {propertyDescriptions.map((desc, index) => (
+                      <tr key={index}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {index + 1}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {desc.propertyType || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {desc.floor || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {desc.length || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {desc.width || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {desc.area || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {desc.usage || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {desc.assessmentYear || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {desc.rebateExemption || '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Documents Section */}
+          <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+            <div className="px-6 py-4 bg-purple-600 text-white">
+              <h2 className="text-xl font-semibold">आवश्यक कागदपत्रे (Required Documents)</h2>
+            </div>
+            
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    आधार कार्ड (Aadhaar Card) *
+                  </label>
+                  <input
+                    type="file"
+                    name="aadharCard"
+                    onChange={handleFileChange}
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    मालमत्ता कार्ड (Property Card) *
+                  </label>
+                  <input
+                    type="file"
+                    name="propertyCard"
+                    onChange={handleFileChange}
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    ७/१२ उतारा (7/12 Extract) *
+                  </label>
+                  <input
+                    type="file"
+                    name="sevenTwelve"
+                    onChange={handleFileChange}
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    ८-अ उतारा (8-A Extract)
+                  </label>
+                  <input
+                    type="file"
+                    name="eightA"
+                    onChange={handleFileChange}
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    विक्री खत (Sale Deed)
+                  </label>
+                  <input
+                    type="file"
+                    name="salesDeed"
+                    onChange={handleFileChange}
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    कर रसीद (Tax Receipt)
+                  </label>
+                  <input
+                    type="file"
+                    name="taxReceipt"
+                    onChange={handleFileChange}
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+            <div className="p-6">
+              <div className="flex flex-wrap gap-4 justify-center">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-3 px-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  {isSubmitting ? 'सबमिट करत आहे...' : 'साठवा (Save)'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => window.location.href = '/malmatta-mahiti'}
+                  className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-3 px-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                >
+                  रद्द करा (Cancel)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => window.location.href = '/malmatta-mahiti'}
+                  className="bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                >
+                  बाहेर (Exit)
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
