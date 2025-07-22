@@ -1,10 +1,16 @@
 import { NextResponse } from 'next/server';
-import connectDB from '../../../../lib/mongodb';
-import Property from '../../../../models/HouseTax';
+// TODO: Migrate to Supabase
+// import connectDB from '../../../../lib/mongodb';
+// import Property from '../../../../models/HouseTax';
 
 export async function POST(request) {
   try {
-    await connectDB();
+    // TODO: Migrate to Supabase
+    return NextResponse.json({ 
+      error: 'This API is being migrated to Supabase. Please use the new property API.' 
+    }, { status: 503 });
+    
+    // await connectDB();
     
     const data = await request.json();
     const { action, ...propertyData } = data;

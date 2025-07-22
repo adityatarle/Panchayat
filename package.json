@@ -4,24 +4,22 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "prisma generate && next build",
+    "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio",
-    "db:reset": "prisma migrate reset",
-    "db:seed": "node prisma/seed.js"
+    "lint": "next lint"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
 <<<<<<< HEAD
+<<<<<<< HEAD
     "@supabase/supabase-js": "^2.52.0",
 =======
     "@prisma/client": "^5.7.1",
 >>>>>>> f626caa6899b01da9955f535526881a0b7184d0b
+=======
+    "@supabase/supabase-js": "^2.52.0",
+>>>>>>> 7ddad3ff9db391aac0fe6187ff3b7c3ff26473e7
     "bcryptjs": "^2.4.3",
     "date-fns": "^2.30.0",
     "html2canvas": "^1.4.1",
@@ -39,7 +37,6 @@
   "devDependencies": {
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
-    "prisma": "^5.7.1",
     "tailwindcss": "^3.4.17"
   }
 }

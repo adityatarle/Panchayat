@@ -1,13 +1,19 @@
 import { NextResponse } from 'next/server';
-import connectDB from '../../../../lib/mongodb';
-import BirthCertificate from '../../../../models/BirthCertificate';
-import ResidenceCertificate from '../../../../models/ResidenceCertificate';
-import WaterConnection from '../../../../models/WaterTax';
-import Property from '../../../../models/HouseTax';
+// TODO: Migrate to Supabase
+// import connectDB from '../../../../lib/mongodb';
+// import BirthCertificate from '../../../../models/BirthCertificate';
+// import ResidenceCertificate from '../../../../models/ResidenceCertificate';
+// import WaterConnection from '../../../../models/WaterTax';
+// import Property from '../../../../models/HouseTax';
 
 export async function GET(request) {
   try {
-    await connectDB();
+    // TODO: Migrate to Supabase
+    return NextResponse.json({ 
+      error: 'This API is being migrated to Supabase. Please use the new property API.' 
+    }, { status: 503 });
+    
+    // await connectDB();
     
     const { searchParams } = new URL(request.url);
     const applicationId = searchParams.get('applicationId');
