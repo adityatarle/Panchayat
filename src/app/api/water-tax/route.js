@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import connectDB from '../../../../lib/mongodb';
-import WaterConnection from '../../../../models/WaterTax';
+import prisma from '../../../../lib/prisma';
+import { sanitizeData, enumConverters } from '../../../../lib/db-helpers';
 
 export async function POST(request) {
   try {
-    await connectDB();
     
     const data = await request.json();
     const { action, ...connectionData } = data;

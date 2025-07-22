@@ -1,32 +1,48 @@
 import { NextResponse } from 'next/server';
-import connectDB from '../../../../lib/mongodb';
-import Property from '../../../../models/HouseTax';
+import prisma from '../../../../lib/prisma';
+import { sanitizeData, enumConverters } from '../../../../lib/db-helpers';
 
 export async function POST(request) {
   try {
-    await connectDB();
     
     const data = await request.json();
     const { action, ...propertyData } = data;
     
     if (action === 'register_property') {
       // Register new property
-      const property = new Property({
-        ...propertyData,
-        registrationDate: new Date(),
-        status: 'active',
-        currentTax: {
-          assessmentYear: new Date().getFullYear().toString(),
-          ...propertyData.currentTax
-        }
-      });
+      const applicationId = 'HT' + Date.now().toString().slice(-6);
       
-      await property.save();
+      const createData = {
+        applicationId,
+        ownerName: sanitizeData.toString(propertyData.ownerName),
+        ownerNameMarathi: sanitizeData.toString(propertyData.ownerNameMarathi),
+        fatherName: sanitizeData.toString(propertyData.fatherName),
+        address: sanitizeData.toString(propertyData.address),
+        mobileNumber: sanitizeData.toPhoneNumber(propertyData.mobileNumber),
+        email: sanitizeData.toString(propertyData.email),
+        aadharNumber: sanitizeData.toAadharNumber(propertyData.aadharNumber),
+        propertyNumber: sanitizeData.toString(propertyData.propertyNumber),
+        surveyNumber: sanitizeData.toString(propertyData.surveyNumber),
+        propertyType: enumConverters.toEnumFormat(propertyData.propertyType),
+        totalArea: sanitizeData.toFloat(propertyData.totalArea),
+        builtUpArea: sanitizeData.toFloat(propertyData.builtUpArea),
+        yearOfConstruction: sanitizeData.toInt(propertyData.yearOfConstruction),
+        annualRentalValue: sanitizeData.toFloat(propertyData.annualRentalValue),
+        taxRate: sanitizeData.toFloat(propertyData.taxRate),
+        taxAmount: sanitizeData.toFloat(propertyData.taxAmount),
+        assessmentYear: new Date().getFullYear().toString(),
+        assessmentDate: new Date(),
+        documents: propertyData.documents || {}
+      };
+      
+      const property = await prisma.houseTax.create({
+        data: createData
+      });
       
       return NextResponse.json({
         success: true,
         message: 'Property registered successfully',
-        propertyId: property.propertyId,
+        propertyId: property.applicationId,
         data: property
       }, { status: 201 });
       
@@ -34,7 +50,9 @@ export async function POST(request) {
       // Process tax payment
       const { propertyId, paymentAmount, paymentMode, transactionId, forYear } = propertyData;
       
-      const property = await Property.findOne({ propertyId });
+      const property = await prisma.houseTax.findUnique({ 
+        where: { applicationId: propertyId } 
+      });
       if (!property) {
         return NextResponse.json({
           success: false,
@@ -43,12 +61,17 @@ export async function POST(request) {
       }
       
       // Update payment status
-      property.currentTax.paidAmount += paymentAmount;
-      property.currentTax.pendingAmount = property.currentTax.totalTax - property.currentTax.paidAmount;
+      const updatedProperty = await prisma.houseTax.update({
+        where: { applicationId: propertyId },
+        data: {
+          paymentStatus: 'PAID',
+          paymentAmount: paymentAmount,
+          paymentId: transactionId,
+          paymentDate: new Date()
+        }
+      });
       
-      if (property.currentTax.pendingAmount <= 0) {
-        property.currentTax.paymentStatus = 'paid';
-      } else {
+      if (true) {
         property.currentTax.paymentStatus = 'partial';
       }
       

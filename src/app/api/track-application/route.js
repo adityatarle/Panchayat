@@ -1,13 +1,8 @@
 import { NextResponse } from 'next/server';
-import connectDB from '../../../../lib/mongodb';
-import BirthCertificate from '../../../../models/BirthCertificate';
-import ResidenceCertificate from '../../../../models/ResidenceCertificate';
-import WaterConnection from '../../../../models/WaterTax';
-import Property from '../../../../models/HouseTax';
+import prisma from '../../../../lib/prisma';
 
 export async function GET(request) {
   try {
-    await connectDB();
     
     const { searchParams } = new URL(request.url);
     const applicationId = searchParams.get('applicationId');

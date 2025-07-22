@@ -1,21 +1,47 @@
 import { NextResponse } from 'next/server';
-import connectDB from '../../../../lib/mongodb';
-import BirthCertificate from '../../../../models/BirthCertificate';
+import prisma from '../../../../lib/prisma';
+import { sanitizeData, enumConverters } from '../../../../lib/db-helpers';
 
 export async function POST(request) {
   try {
-    await connectDB();
-    
     const data = await request.json();
     
-    // Create new birth certificate application
-    const birthCertificate = new BirthCertificate({
-      ...data,
-      submissionDate: new Date(),
-      status: 'submitted'
-    });
+    // Generate application ID
+    const applicationId = 'BC' + Date.now().toString().slice(-6);
     
-    await birthCertificate.save();
+    // Prepare data for database
+    const createData = {
+      applicationId,
+      childName: sanitizeData.toString(data.childName),
+      childNameMarathi: sanitizeData.toString(data.childNameMarathi),
+      dateOfBirth: sanitizeData.toDate(data.dateOfBirth),
+      placeOfBirth: sanitizeData.toString(data.placeOfBirth),
+      gender: enumConverters.genderToEnum(data.gender),
+      weight: sanitizeData.toFloat(data.weight),
+      fatherName: sanitizeData.toString(data.fatherName),
+      fatherNameMarathi: sanitizeData.toString(data.fatherNameMarathi),
+      fatherOccupation: sanitizeData.toString(data.fatherOccupation),
+      motherName: sanitizeData.toString(data.motherName),
+      motherNameMarathi: sanitizeData.toString(data.motherNameMarathi),
+      motherOccupation: sanitizeData.toString(data.motherOccupation),
+      address: sanitizeData.toString(data.address),
+      city: sanitizeData.toString(data.city),
+      district: sanitizeData.toString(data.district) || 'Maharashtra',
+      state: sanitizeData.toString(data.state) || 'Maharashtra',
+      pincode: sanitizeData.toPincode(data.pincode),
+      mobileNumber: sanitizeData.toPhoneNumber(data.mobileNumber),
+      email: sanitizeData.toString(data.email),
+      hospitalName: sanitizeData.toString(data.hospitalName),
+      doctorName: sanitizeData.toString(data.doctorName),
+      registrationNumber: sanitizeData.toString(data.registrationNumber),
+      documents: data.documents || {},
+      remarks: sanitizeData.toString(data.remarks)
+    };
+    
+    // Create new birth certificate application
+    const birthCertificate = await prisma.birthCertificate.create({
+      data: createData
+    });
     
     return NextResponse.json({
       success: true,
@@ -36,7 +62,6 @@ export async function POST(request) {
 
 export async function GET(request) {
   try {
-    await connectDB();
     
     const { searchParams } = new URL(request.url);
     const applicationId = searchParams.get('applicationId');
@@ -44,21 +69,24 @@ export async function GET(request) {
     const page = parseInt(searchParams.get('page')) || 1;
     const limit = parseInt(searchParams.get('limit')) || 10;
     
-    let query = {};
+    let where = {};
     
     if (applicationId) {
-      query.applicationId = applicationId;
+      where.applicationId = applicationId;
     }
     
     if (status) {
-      query.status = status;
+      where.status = status.toUpperCase();
     }
     
     const skip = (page - 1) * limit;
     
     if (applicationId) {
       // Get specific application
-      const application = await BirthCertificate.findOne(query);
+      const application = await prisma.birthCertificate.findUnique({
+        where: { applicationId }
+      });
+      
       if (!application) {
         return NextResponse.json({
           success: false,
@@ -72,13 +100,14 @@ export async function GET(request) {
       });
     } else {
       // Get all applications with pagination
-      const applications = await BirthCertificate.find(query)
-        .sort({ submissionDate: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean();
+      const applications = await prisma.birthCertificate.findMany({
+        where,
+        orderBy: { submissionDate: 'desc' },
+        skip,
+        take: limit
+      });
       
-      const total = await BirthCertificate.countDocuments(query);
+      const total = await prisma.birthCertificate.count({ where });
       
       return NextResponse.json({
         success: true,
@@ -104,7 +133,6 @@ export async function GET(request) {
 
 export async function PUT(request) {
   try {
-    await connectDB();
     
     const data = await request.json();
     const { applicationId, ...updateData } = data;
@@ -116,18 +144,21 @@ export async function PUT(request) {
       }, { status: 400 });
     }
     
-    const updatedApplication = await BirthCertificate.findOneAndUpdate(
-      { applicationId },
-      updateData,
-      { new: true }
-    );
-    
-    if (!updatedApplication) {
-      return NextResponse.json({
-        success: false,
-        message: 'Application not found'
-      }, { status: 404 });
+    // Convert enum fields if present
+    if (updateData.status) {
+      updateData.status = updateData.status.toUpperCase();
     }
+    if (updateData.gender) {
+      updateData.gender = updateData.gender.toUpperCase();
+    }
+    if (updateData.dateOfBirth) {
+      updateData.dateOfBirth = new Date(updateData.dateOfBirth);
+    }
+    
+    const updatedApplication = await prisma.birthCertificate.update({
+      where: { applicationId },
+      data: updateData
+    });
     
     return NextResponse.json({
       success: true,
