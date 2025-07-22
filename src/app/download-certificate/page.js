@@ -1,16 +1,19 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 export default function DownloadCertificate() {
   const [searchCriteria, setSearchCriteria] = useState('application');
   const [searchValue, setSearchValue] = useState('');
   const [searchResult, setSearchResult] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const certificateRef = useRef();
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Enhanced sample certificate data with more realistic details
   const sampleCertificates = {
@@ -141,8 +144,17 @@ export default function DownloadCertificate() {
   };
 
   const generateCertificatePDF = async (certificate) => {
+    if (!isClient) {
+      alert('कृपया थोड़ा इंतजार करें...');
+      return;
+    }
+
     setIsGenerating(true);
     try {
+      // Dynamically import the PDF libraries only on client side
+      const { default: jsPDF } = await import('jspdf');
+      const { default: html2canvas } = await import('html2canvas');
+
       // Create certificate content
       const certificateElement = document.createElement('div');
       certificateElement.innerHTML = getCertificateHTML(certificate);
@@ -150,13 +162,19 @@ export default function DownloadCertificate() {
       certificateElement.style.left = '-9999px';
       certificateElement.style.width = '794px'; // A4 width in pixels at 96 DPI
       certificateElement.style.backgroundColor = 'white';
+      certificateElement.style.fontFamily = 'Arial, sans-serif';
       document.body.appendChild(certificateElement);
+
+      // Wait a bit for fonts to load
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Convert to canvas
       const canvas = await html2canvas(certificateElement, {
         scale: 2,
         useCORS: true,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        logging: false,
+        allowTaint: true
       });
 
       // Remove temporary element
@@ -171,10 +189,13 @@ export default function DownloadCertificate() {
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
       
       // Download PDF
-      pdf.save(`${certificate.certificateNumber.replace(/\//g, '_')}_${certificate.applicantNameEnglish.replace(/\s+/g, '_')}.pdf`);
+      const filename = `${certificate.certificateNumber.replace(/\//g, '_')}_${certificate.applicantNameEnglish.replace(/\s+/g, '_')}.pdf`;
+      pdf.save(filename);
+      
+      alert('✅ PDF सफलतापूर्वक डाउनलोड हो गया!');
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('PDF जेनरेट करने में त्रुटि हुई। कृपया पुनः प्रयास करें।');
+      alert('PDF जेनरेट करने में त्रुटि हुई। कृपया पुनः प्रयास करें।\n\nError: ' + error.message);
     } finally {
       setIsGenerating(false);
     }
@@ -674,23 +695,28 @@ export default function DownloadCertificate() {
               <h4 className="text-lg font-bold text-black mb-4">🎯 कार्य | Actions</h4>
               
               <div className="space-y-4">
-                <button
-                  onClick={() => generateCertificatePDF(searchResult)}
-                  disabled={isGenerating}
-                  className="w-full bg-green-600 text-white px-6 py-4 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                >
-                  {isGenerating ? (
-                    <>
-                      <span className="animate-spin">⏳</span>
-                      <span>PDF जेनरेट हो रहा है...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>📥</span>
-                      <span>PDF डाउनलोड करें | Download PDF</span>
-                    </>
-                  )}
-                </button>
+                                 <button
+                   onClick={() => generateCertificatePDF(searchResult)}
+                   disabled={isGenerating || !isClient}
+                   className="w-full bg-green-600 text-white px-6 py-4 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                 >
+                   {!isClient ? (
+                     <>
+                       <span>⏳</span>
+                       <span>लोड हो रहा है...</span>
+                     </>
+                   ) : isGenerating ? (
+                     <>
+                       <span className="animate-spin">⏳</span>
+                       <span>PDF जेनरेट हो रहा है...</span>
+                     </>
+                   ) : (
+                     <>
+                       <span>📥</span>
+                       <span>PDF डाउनलोड करें | Download PDF</span>
+                     </>
+                   )}
+                 </button>
 
                 <button
                   onClick={() => handleVerify(searchResult)}
