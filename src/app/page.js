@@ -378,13 +378,13 @@ export default function Home() {
 
       {/* Quick Actions */}
       <section className="mb-12">
-        <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">{t(homeTexts.quickServicesTitle)}</h3>
+        <h3 className="text-2xl font-bold text-black mb-6 text-center">{t(homeTexts.quickServicesTitle)}</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {quickActions.map((action, index) => (
             <Link key={index} href={action.route} className="group">
-              <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 text-center border border-gray-100 group-hover:border-primary-300">
+              <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 text-center border border-gray-100 group-hover:border-csc-orange">
                 <div className="text-3xl mb-3">{action.icon}</div>
-                <h4 className="font-medium text-gray-800 text-sm">{t(action.title)}</h4>
+                <h4 className="font-medium text-black text-sm">{t(action.title)}</h4>
               </div>
             </Link>
           ))}
