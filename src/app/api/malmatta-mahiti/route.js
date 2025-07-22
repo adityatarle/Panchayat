@@ -1,21 +1,18 @@
 import { NextResponse } from 'next/server';
-import connectDB from '../../../../lib/mongodb';
-import MalmattaMahiti from '../../../../models/MalmattaMahiti';
+import prisma from '../../../../lib/prisma';
+import { dbOperations } from '../../../../lib/db-helpers';
 
 export async function POST(request) {
   try {
-    await connectDB();
-    
     const data = await request.json();
     
-    // Create new malmatta mahiti application
-    const malmattaApplication = new MalmattaMahiti({
-      ...data,
-      submissionDate: new Date(),
-      status: 'submitted'
-    });
+    // Prepare data using helper functions
+    const createData = dbOperations.prepareMalmattaMahitiData(data);
     
-    await malmattaApplication.save();
+    // Create new malmatta mahiti application
+    const malmattaApplication = await prisma.malmattaMahiti.create({
+      data: createData
+    });
     
     return NextResponse.json({
       success: true,
@@ -36,8 +33,6 @@ export async function POST(request) {
 
 export async function GET(request) {
   try {
-    await connectDB();
-    
     const { searchParams } = new URL(request.url);
     const applicationId = searchParams.get('applicationId');
     const status = searchParams.get('status');
@@ -45,25 +40,33 @@ export async function GET(request) {
     const page = parseInt(searchParams.get('page')) || 1;
     const limit = parseInt(searchParams.get('limit')) || 10;
     
-    let query = {};
+    let where = {};
     
     if (applicationId) {
-      query.applicationId = applicationId;
+      where.applicationId = applicationId;
     }
     
     if (status) {
-      query.status = status;
+      where.status = status.toUpperCase();
     }
     
     if (serviceType) {
-      query.serviceType = serviceType;
+      where.serviceType = serviceType.toUpperCase().replace(/[^A-Z_]/g, '_');
     }
     
     const skip = (page - 1) * limit;
     
     if (applicationId) {
       // Get specific application
-      const application = await MalmattaMahiti.findOne(query);
+      const application = await prisma.malmattaMahiti.findUnique({
+        where: { applicationId },
+        include: {
+          communicationHistory: {
+            orderBy: { createdAt: 'desc' }
+          }
+        }
+      });
+      
       if (!application) {
         return NextResponse.json({
           success: false,
@@ -77,13 +80,20 @@ export async function GET(request) {
       });
     } else {
       // Get all applications with pagination
-      const applications = await MalmattaMahiti.find(query)
-        .sort({ submissionDate: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean();
+      const applications = await prisma.malmattaMahiti.findMany({
+        where,
+        orderBy: { submissionDate: 'desc' },
+        skip,
+        take: limit,
+        include: {
+          communicationHistory: {
+            take: 1,
+            orderBy: { createdAt: 'desc' }
+          }
+        }
+      });
       
-      const total = await MalmattaMahiti.countDocuments(query);
+      const total = await prisma.malmattaMahiti.count({ where });
       
       return NextResponse.json({
         success: true,
@@ -109,8 +119,6 @@ export async function GET(request) {
 
 export async function PUT(request) {
   try {
-    await connectDB();
-    
     const data = await request.json();
     const { applicationId, ...updateData } = data;
     
@@ -121,18 +129,78 @@ export async function PUT(request) {
       }, { status: 400 });
     }
     
-    const updatedApplication = await MalmattaMahiti.findOneAndUpdate(
-      { applicationId },
-      updateData,
-      { new: true }
-    );
-    
-    if (!updatedApplication) {
-      return NextResponse.json({
-        success: false,
-        message: 'Application not found'
-      }, { status: 404 });
+    // Convert enum fields if present
+    if (updateData.status) {
+      updateData.status = updateData.status.toUpperCase();
     }
+    if (updateData.paymentStatus) {
+      updateData.paymentStatus = updateData.paymentStatus.toUpperCase();
+    }
+    if (updateData.priority) {
+      updateData.priority = updateData.priority.toUpperCase();
+    }
+    
+    // Convert date fields if present
+    if (updateData.transferDate) {
+      updateData.transferDate = new Date(updateData.transferDate);
+    }
+    if (updateData.newOwnerDateOfBirth) {
+      updateData.newOwnerDateOfBirth = new Date(updateData.newOwnerDateOfBirth);
+    }
+    if (updateData.processingDate) {
+      updateData.processingDate = new Date(updateData.processingDate);
+    }
+    if (updateData.approvalDate) {
+      updateData.approvalDate = new Date(updateData.approvalDate);
+    }
+    if (updateData.completionDate) {
+      updateData.completionDate = new Date(updateData.completionDate);
+    }
+    if (updateData.paymentDate) {
+      updateData.paymentDate = new Date(updateData.paymentDate);
+    }
+    if (updateData.certificateIssueDate) {
+      updateData.certificateIssueDate = new Date(updateData.certificateIssueDate);
+    }
+    if (updateData.certificateValidTill) {
+      updateData.certificateValidTill = new Date(updateData.certificateValidTill);
+    }
+    
+    // Convert numeric fields if present
+    if (updateData.transferAmount) {
+      updateData.transferAmount = parseFloat(updateData.transferAmount);
+    }
+    if (updateData.stampDutyPaid) {
+      updateData.stampDutyPaid = parseFloat(updateData.stampDutyPaid);
+    }
+    if (updateData.registrationFee) {
+      updateData.registrationFee = parseFloat(updateData.registrationFee);
+    }
+    if (updateData.totalArea) {
+      updateData.totalArea = parseFloat(updateData.totalArea);
+    }
+    if (updateData.builtUpArea) {
+      updateData.builtUpArea = parseFloat(updateData.builtUpArea);
+    }
+    if (updateData.yearOfConstruction) {
+      updateData.yearOfConstruction = parseInt(updateData.yearOfConstruction);
+    }
+    if (updateData.monthlyIncome) {
+      updateData.monthlyIncome = parseFloat(updateData.monthlyIncome);
+    }
+    if (updateData.paymentAmount) {
+      updateData.paymentAmount = parseFloat(updateData.paymentAmount);
+    }
+    
+    const updatedApplication = await prisma.malmattaMahiti.update({
+      where: { applicationId },
+      data: updateData,
+      include: {
+        communicationHistory: {
+          orderBy: { createdAt: 'desc' }
+        }
+      }
+    });
     
     return NextResponse.json({
       success: true,
