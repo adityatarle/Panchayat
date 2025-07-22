@@ -19,7 +19,7 @@ export default function Header() {
   return (
     <>
       {/* Top Government Bar */}
-      <div className="bg-govBlue-800 text-white py-1">
+      <div className="bg-black text-white py-1">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center text-xs">
             <div className="flex items-center space-x-4">
