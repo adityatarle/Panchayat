@@ -256,7 +256,7 @@ export default function ModernMalmattaForm() {
                     <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
                         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                             <p className="text-gray-600 text-sm">कृपया सबमिट करण्यापूर्वी सर्व माहिती तपासा. एकदा सबमिट केल्यावर बदल करता येणार नाहीत.</p>
-                            <button type="submit" disabled={isSubmitting} className="w-full md:w-auto px-10 py-3 bg-green-600 text-white font-bold text-lg rounded-md shadow-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-transform transform hover:scale-105">
+                            <button type="submit" disabled={isSubmitting} className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                 {isSubmitting ? 'जतन करत आहे...' : 'संपूर्ण अर्ज जतन करा'}
                             </button>
                         </div>
