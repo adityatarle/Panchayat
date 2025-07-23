@@ -1,37 +1,104 @@
 import { NextResponse } from 'next/server';
-// TODO: Migrate to Supabase
-// import prisma from '../../../../lib/prisma';
-import { dbOperations } from '../../../../lib/db-helpers';
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase client with service role key for server operations
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 export async function POST(request) {
   try {
-    // TODO: Migrate to Supabase
-    return NextResponse.json({ 
-      error: 'This API is being migrated to Supabase. Please use the new property API.' 
-    }, { status: 503 });
-    
     const data = await request.json();
     
-    // Prepare data using helper functions
-    const createData = dbOperations.prepareMalmattaMahitiData(data);
-    
-    // Create new malmatta mahiti application
-    const malmattaApplication = await prisma.malmattaMahiti.create({
-      data: createData
-    });
+    // Validate required fields
+    if (!data.propertyNumber || !data.ownerName || !data.newOwnerName) {
+      return NextResponse.json({
+        success: false,
+        message: 'Property number, current owner name, and new owner name are required'
+      }, { status: 400 });
+    }
+
+    // Prepare data for database insertion
+    const applicationData = {
+      // Property Details
+      property_number: data.propertyNumber,
+      survey_number: data.surveyNumber,
+      plot_number: data.plotNumber,
+      village: data.village,
+      taluka: data.taluka,
+      district: data.district || 'Maharashtra',
+      property_type: data.propertyType,
+      total_area: data.totalArea ? parseFloat(data.totalArea) : null,
+      
+      // Current Owner Details
+      owner_name: data.ownerName,
+      owner_name_marathi: data.ownerNameMarathi,
+      father_name: data.fatherName,
+      aadhar_number: data.aadharNumber,
+      mobile_number: data.mobileNumber,
+      
+      // New Owner Details
+      new_owner_name: data.newOwnerName,
+      new_owner_father_name: data.newOwnerFatherName,
+      new_owner_aadhar: data.newOwnerAadhar,
+      new_owner_mobile: data.newOwnerMobile,
+      new_owner_address: data.newOwnerAddress,
+      
+      // Transfer Details
+      transfer_reason: data.transferReason,
+      transfer_date: data.transferDate ? new Date(data.transferDate).toISOString().split('T')[0] : null,
+      transfer_amount: data.transferAmount ? parseFloat(data.transferAmount) : null,
+      
+      // Service Details
+      service_type: data.serviceType || 'property-transfer',
+      purpose: data.purpose || 'Property Transfer',
+      
+      // Status
+      status: 'SUBMITTED',
+      payment_status: 'PENDING',
+      payment_amount: 200
+    };
+
+    // Insert into database
+    const { data: result, error } = await supabase
+      .from('malmatta_mahiti_applications')
+      .insert([applicationData])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Database error:', error);
+      return NextResponse.json({
+        success: false,
+        message: 'Failed to save application to database',
+        error: error.message
+      }, { status: 500 });
+    }
+
+    // TODO: Handle file uploads for documents
+    // For now, we'll just acknowledge that documents need to be processed separately
     
     return NextResponse.json({
       success: true,
-      message: 'Malmatta Mahiti application submitted successfully',
-      applicationId: malmattaApplication.applicationId,
-      data: malmattaApplication
+      message: 'मालमत्ता फेरफार अर्ज यशस्वीरित्या जमा झाला!',
+      applicationId: result.application_id,
+      data: {
+        applicationId: result.application_id,
+        propertyNumber: result.property_number,
+        ownerName: result.owner_name,
+        newOwnerName: result.new_owner_name,
+        status: result.status,
+        submissionDate: result.submission_date,
+        paymentAmount: result.payment_amount
+      }
     }, { status: 201 });
     
   } catch (error) {
     console.error('Malmatta Mahiti submission error:', error);
     return NextResponse.json({
       success: false,
-      message: 'Failed to submit malmatta mahiti application',
+      message: 'अर्ज जमा करण्यात त्रुटी झाली',
       error: error.message
     }, { status: 500 });
   }
@@ -46,34 +113,15 @@ export async function GET(request) {
     const page = parseInt(searchParams.get('page')) || 1;
     const limit = parseInt(searchParams.get('limit')) || 10;
     
-    let where = {};
-    
-    if (applicationId) {
-      where.applicationId = applicationId;
-    }
-    
-    if (status) {
-      where.status = status.toUpperCase();
-    }
-    
-    if (serviceType) {
-      where.serviceType = serviceType.toUpperCase().replace(/[^A-Z_]/g, '_');
-    }
-    
-    const skip = (page - 1) * limit;
-    
     if (applicationId) {
       // Get specific application
-      const application = await prisma.malmattaMahiti.findUnique({
-        where: { applicationId },
-        include: {
-          communicationHistory: {
-            orderBy: { createdAt: 'desc' }
-          }
-        }
-      });
+      const { data: application, error } = await supabase
+        .from('malmatta_mahiti_applications')
+        .select('*')
+        .eq('application_id', applicationId)
+        .single();
       
-      if (!application) {
+      if (error || !application) {
         return NextResponse.json({
           success: false,
           message: 'Application not found'
@@ -85,21 +133,35 @@ export async function GET(request) {
         data: application
       });
     } else {
-      // Get all applications with pagination
-      const applications = await prisma.malmattaMahiti.findMany({
-        where,
-        orderBy: { submissionDate: 'desc' },
-        skip,
-        take: limit,
-        include: {
-          communicationHistory: {
-            take: 1,
-            orderBy: { createdAt: 'desc' }
-          }
-        }
-      });
+      // Build query for filtered results
+      let query = supabase
+        .from('malmatta_mahiti_applications')
+        .select('*', { count: 'exact' });
       
-      const total = await prisma.malmattaMahiti.count({ where });
+      if (status) {
+        query = query.eq('status', status.toUpperCase());
+      }
+      
+      if (serviceType) {
+        query = query.eq('service_type', serviceType);
+      }
+      
+      // Add pagination
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+      
+      const { data: applications, error, count } = await query
+        .order('submission_date', { ascending: false })
+        .range(from, to);
+      
+      if (error) {
+        console.error('Database query error:', error);
+        return NextResponse.json({
+          success: false,
+          message: 'Failed to fetch applications',
+          error: error.message
+        }, { status: 500 });
+      }
       
       return NextResponse.json({
         success: true,
@@ -107,8 +169,8 @@ export async function GET(request) {
         pagination: {
           page,
           limit,
-          total,
-          pages: Math.ceil(total / limit)
+          total: count,
+          pages: Math.ceil(count / limit)
         }
       });
     }
@@ -135,78 +197,75 @@ export async function PUT(request) {
       }, { status: 400 });
     }
     
+    // Prepare update data with proper field mapping
+    const updateFields = {};
+    
     // Convert enum fields if present
     if (updateData.status) {
-      updateData.status = updateData.status.toUpperCase();
+      updateFields.status = updateData.status.toUpperCase();
     }
     if (updateData.paymentStatus) {
-      updateData.paymentStatus = updateData.paymentStatus.toUpperCase();
-    }
-    if (updateData.priority) {
-      updateData.priority = updateData.priority.toUpperCase();
+      updateFields.payment_status = updateData.paymentStatus.toUpperCase();
     }
     
     // Convert date fields if present
     if (updateData.transferDate) {
-      updateData.transferDate = new Date(updateData.transferDate);
-    }
-    if (updateData.newOwnerDateOfBirth) {
-      updateData.newOwnerDateOfBirth = new Date(updateData.newOwnerDateOfBirth);
+      updateFields.transfer_date = new Date(updateData.transferDate).toISOString().split('T')[0];
     }
     if (updateData.processingDate) {
-      updateData.processingDate = new Date(updateData.processingDate);
+      updateFields.processing_date = new Date(updateData.processingDate).toISOString();
     }
     if (updateData.approvalDate) {
-      updateData.approvalDate = new Date(updateData.approvalDate);
+      updateFields.approval_date = new Date(updateData.approvalDate).toISOString();
     }
     if (updateData.completionDate) {
-      updateData.completionDate = new Date(updateData.completionDate);
-    }
-    if (updateData.paymentDate) {
-      updateData.paymentDate = new Date(updateData.paymentDate);
-    }
-    if (updateData.certificateIssueDate) {
-      updateData.certificateIssueDate = new Date(updateData.certificateIssueDate);
-    }
-    if (updateData.certificateValidTill) {
-      updateData.certificateValidTill = new Date(updateData.certificateValidTill);
+      updateFields.completion_date = new Date(updateData.completionDate).toISOString();
     }
     
     // Convert numeric fields if present
     if (updateData.transferAmount) {
-      updateData.transferAmount = parseFloat(updateData.transferAmount);
-    }
-    if (updateData.stampDutyPaid) {
-      updateData.stampDutyPaid = parseFloat(updateData.stampDutyPaid);
-    }
-    if (updateData.registrationFee) {
-      updateData.registrationFee = parseFloat(updateData.registrationFee);
+      updateFields.transfer_amount = parseFloat(updateData.transferAmount);
     }
     if (updateData.totalArea) {
-      updateData.totalArea = parseFloat(updateData.totalArea);
-    }
-    if (updateData.builtUpArea) {
-      updateData.builtUpArea = parseFloat(updateData.builtUpArea);
-    }
-    if (updateData.yearOfConstruction) {
-      updateData.yearOfConstruction = parseInt(updateData.yearOfConstruction);
-    }
-    if (updateData.monthlyIncome) {
-      updateData.monthlyIncome = parseFloat(updateData.monthlyIncome);
+      updateFields.total_area = parseFloat(updateData.totalArea);
     }
     if (updateData.paymentAmount) {
-      updateData.paymentAmount = parseFloat(updateData.paymentAmount);
+      updateFields.payment_amount = parseFloat(updateData.paymentAmount);
     }
     
-    const updatedApplication = await prisma.malmattaMahiti.update({
-      where: { applicationId },
-      data: updateData,
-      include: {
-        communicationHistory: {
-          orderBy: { createdAt: 'desc' }
-        }
-      }
-    });
+    // String fields
+    if (updateData.notes) {
+      updateFields.notes = updateData.notes;
+    }
+    if (updateData.processedBy) {
+      updateFields.processed_by = updateData.processedBy;
+    }
+    
+    // Add updated_at timestamp
+    updateFields.updated_at = new Date().toISOString();
+    
+    const { data: updatedApplication, error } = await supabase
+      .from('malmatta_mahiti_applications')
+      .update(updateFields)
+      .eq('application_id', applicationId)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Database update error:', error);
+      return NextResponse.json({
+        success: false,
+        message: 'Failed to update application',
+        error: error.message
+      }, { status: 500 });
+    }
+    
+    if (!updatedApplication) {
+      return NextResponse.json({
+        success: false,
+        message: 'Application not found'
+      }, { status: 404 });
+    }
     
     return NextResponse.json({
       success: true,
