@@ -53,14 +53,14 @@ const FormField = ({ id, label, children }) => (
 );
 
 export default function ModernMalmattaForm() {
-    // --- All state and logic hooks (useState, useEffect, handlers) remain unchanged ---
     const [mainData, setMainData] = useState(initialMainData);
     const [currentDescription, setCurrentDescription] = useState(initialDescription);
     const [descriptions, setDescriptions] = useState([]);
     const [editingId, setEditingId] = useState(null);
     const [dependentOptions, setDependentOptions] = useState(DEPENDENT_TAX_OPTIONS.default);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
+    const [errors, setErrors] = useState({}); // State for validation errors
+
     useEffect(() => {
         const { length, width } = currentDescription;
         if (length && width && !isNaN(length) && !isNaN(width)) {
@@ -74,9 +74,48 @@ export default function ModernMalmattaForm() {
         setCurrentDescription(prev => ({...prev, dependentTaxType: options[0] || ''}));
     }, [currentDescription.propertyTaxRateType]);
     
+    // --- New Validation Logic ---
+    const validateField = (name, value) => {
+        const tempErrors = { ...errors };
+        switch (name) {
+            case 'holderName':
+                if (!value.trim()) {
+                    tempErrors.holderName = 'धारकाचे नाव आवश्यक आहे.';
+                } else {
+                    delete tempErrors.holderName;
+                }
+                break;
+            case 'mobileNo':
+                if (value && !/^\d{10}$/.test(value)) {
+                    tempErrors.mobileNo = 'मोबाईल नंबर १० अंकी असावा.';
+                } else {
+                    delete tempErrors.mobileNo;
+                }
+                break;
+            case 'aadharNo':
+                if (value && !/^\d{12}$/.test(value)) {
+                    tempErrors.aadharNo = 'आधार क्रमांक १२ अंकी असावा.';
+                } else {
+                    delete tempErrors.aadharNo;
+                }
+                break;
+            default:
+                break;
+        }
+        setErrors(tempErrors);
+    };
+    
     const handleMainChange = (e) => {
         const { name, value, type, checked } = e.target;
-        setMainData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+        
+        // Prevent non-numeric input for mobile and aadhar
+        if ((name === "mobileNo" || name === "aadharNo") && value && !/^\d*$/.test(value)) {
+            return;
+        }
+        
+        const updatedValue = type === 'checkbox' ? checked : value;
+        setMainData(prev => ({ ...prev, [name]: updatedValue }));
+        validateField(name, updatedValue);
     };
 
     const handleDescriptionChange = (e) => {
@@ -113,12 +152,32 @@ export default function ModernMalmattaForm() {
         }
     };
     
+    // --- Updated Submit Handler with Full Validation ---
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Run full validation before submitting
+        const formErrors = {
+            ...errors,
+            ...(!mainData.holderName.trim() && { holderName: 'धारकाचे नाव आवश्यक आहे.' }),
+            ...(mainData.mobileNo && !/^\d{10}$/.test(mainData.mobileNo) && { mobileNo: 'मोबाईल नंबर १० अंकी असावा.' }),
+            ...(mainData.aadharNo && !/^\d{12}$/.test(mainData.aadharNo) && { aadharNo: 'आधार क्रमांक १२ अंकी असावा.' }),
+        };
+        
+        // Remove undefined/false values from formErrors
+        Object.keys(formErrors).forEach(key => !formErrors[key] && delete formErrors[key]);
+        
+        if (Object.keys(formErrors).length > 0) {
+            setErrors(formErrors);
+            alert('कृपया अर्ज सबमिट करण्यापूर्वी फॉर्ममधील त्रुटी तपासा आणि दुरुस्त करा.');
+            return;
+        }
+
         if (descriptions.length === 0) {
             alert('कृपया अर्ज जतन करण्यापूर्वी किमान एक मालमत्ता वर्णन जोडा.');
             return;
         }
+        
         setIsSubmitting(true);
         try {
             const response = await fetch('/api/save-property', {
@@ -133,6 +192,7 @@ export default function ModernMalmattaForm() {
             alert(`अर्ज यशस्वीरित्या जतन झाला! तुमचा अर्ज क्रमांक आहे: ${result.applicationId}`);
             setMainData(initialMainData); 
             setDescriptions([]); 
+            setErrors({});
             handleNewDescription();
         } catch (error) {
             alert(`अर्ज जतन करताना त्रुटी आली: ${error.message}`);
@@ -141,7 +201,6 @@ export default function ModernMalmattaForm() {
         }
     };
     
-    // Consistent styling for inputs
     const inputClass = "w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm";
     
     return (
@@ -154,14 +213,25 @@ export default function ModernMalmattaForm() {
 
                 <form onSubmit={handleSubmit} className="space-y-8">
 
-                    {/* Section 1: Holder's Details */}
+                    {/* Section 1: Holder's Details (with validation) */}
                     <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
                         <h2 className="text-xl font-semibold text-gray-800 border-b pb-4 mb-6">१. मालमत्ता धारकाची माहिती</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <FormField label="धारकाचे नाव (मराठी)"><input type="text" name="holderName" value={mainData.holderName} onChange={handleMainChange} className={inputClass} required /></FormField>
-                            <FormField label="धारकाचे नाव (English)"><input type="text" name="holderNameEnglish" value={mainData.holderNameEnglish} onChange={handleMainChange} className={inputClass} /></FormField>
-                            <FormField label="मोबाईल नंबर"><input type="tel" name="mobileNo" value={mainData.mobileNo} onChange={handleMainChange} className={inputClass} placeholder="10-digit number" /></FormField>
-                            <FormField label="आधार क्रमांक"><input type="text" name="aadharNo" value={mainData.aadharNo} onChange={handleMainChange} className={inputClass} placeholder="12-digit number" /></FormField>
+                            <FormField id="holderName" label="धारकाचे नाव (मराठी)">
+                                <input type="text" name="holderName" value={mainData.holderName} onChange={handleMainChange} className={`${inputClass} ${errors.holderName ? 'border-red-500' : ''}`} required />
+                                {errors.holderName && <p className="text-red-500 text-xs mt-1">{errors.holderName}</p>}
+                            </FormField>
+                            <FormField id="holderNameEnglish" label="धारकाचे नाव (English)">
+                                <input type="text" name="holderNameEnglish" value={mainData.holderNameEnglish} onChange={handleMainChange} className={inputClass} />
+                            </FormField>
+                            <FormField id="mobileNo" label="मोबाईल नंबर">
+                                <input type="tel" name="mobileNo" value={mainData.mobileNo} onChange={handleMainChange} className={`${inputClass} ${errors.mobileNo ? 'border-red-500' : ''}`} placeholder="10-digit number" maxLength="10" />
+                                {errors.mobileNo && <p className="text-red-500 text-xs mt-1">{errors.mobileNo}</p>}
+                            </FormField>
+                            <FormField id="aadharNo" label="आधार क्रमांक">
+                                <input type="text" name="aadharNo" value={mainData.aadharNo} onChange={handleMainChange} className={`${inputClass} ${errors.aadharNo ? 'border-red-500' : ''}`} placeholder="12-digit number" maxLength="12" />
+                                {errors.aadharNo && <p className="text-red-500 text-xs mt-1">{errors.aadharNo}</p>}
+                            </FormField>
                         </div>
                     </div>
                     
