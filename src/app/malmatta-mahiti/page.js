@@ -365,7 +365,7 @@ export default function MalmattaMahiti() {
               {t(moduleTexts.subtitle)}
             </p>
             
-            <p className="text-sm text-blue-200 max-w-2xl mx-auto">
+            <p className="text-sm text-govBlue-600 max-w-2xl mx-auto">
               {t(moduleTexts.description)}
             </p>
           </div>
@@ -402,7 +402,7 @@ export default function MalmattaMahiti() {
                   <h4 className="font-bold text-black mb-2 group-hover:text-csc-orange transition-colors text-sm">
                     {t(service.title)}
                   </h4>
-                  <p className="text-xs text-black leading-relaxed mb-3">
+                  <p className="text-xs text-blue-600 leading-relaxed mb-3">
                     {t(service.description)}
                   </p>
                   

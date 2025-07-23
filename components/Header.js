@@ -21,7 +21,7 @@ export default function Header() {
       {/* Top Government Bar */}
       <div className="bg-black text-white py-1">
         <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center text-xs">
+          <div className="flex justify-between items-center text-xs text-blue bg-blue-500 text-white p-2 rounded-xl -600 text-semibold">
             <div className="flex items-center space-x-4">
               <span>🇮🇳 भारत सरकार | Government of India</span>
               <span className="hidden md:inline">महाराष्ट्र राज्य | State of Maharashtra</span>
@@ -176,15 +176,15 @@ export default function Header() {
       </header>
 
       {/* Services Quick Access Bar */}
-      <div className="bg-govBlue-600 text-white py-2">
+      <div className="bg-govBlue-600 text-govBlue-600 py-2">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-center space-x-6 text-sm overflow-x-auto">
+          <div className="flex items-center justify-between space-x-6 text-sm overflow-x-auto">
             <span className="whitespace-nowrap">त्वरित सेवाएं:</span>
-            <Link href="/birth-certificate" className="whitespace-nowrap hover:text-saffron transition-colors">जन्म प्रमाणपत्र</Link>
-            <Link href="/marriage-certificate" className="whitespace-nowrap hover:text-saffron transition-colors">विवाह प्रमाणपत्र</Link>
-            <Link href="/income-certificate" className="whitespace-nowrap hover:text-saffron transition-colors">आय प्रमाणपत्र</Link>
-            <Link href="/caste-certificate" className="whitespace-nowrap hover:text-saffron transition-colors">जाति प्रमाणपत्र</Link>
-            <Link href="/track-application" className="whitespace-nowrap hover:text-saffron transition-colors">आवेदन ट्रैक करें</Link>
+            <Link href="/birth-certificate" className="whitespace-nowrap  bg-blue-500 text-white p-2 rounded-xl hover:text-orange-700 transition-colors">जन्म प्रमाणपत्र</Link>
+            <Link href="/marriage-certificate" className="whitespace-nowrap bg-blue-500 text-white p-2 rounded-xl  hover:text-orange-700 transition-colors">विवाह प्रमाणपत्र</Link>
+            <Link href="/income-certificate" className="whitespace-nowrap bg-blue-500 text-white p-2 rounded-xl  hover:text-orange-700 transition-colors">आय प्रमाणपत्र</Link>
+            <Link href="/caste-certificate" className="whitespace-nowrap bg-blue-500 text-white p-2 rounded-xl  hover:text-orange-700 transition-colors">जाति प्रमाणपत्र</Link>
+            <Link href="/track-application" className="whitespace-nowrap bg-blue-500 text-white p-2 rounded-xl  hover:text-orange-700 transition-colors">आवेदन ट्रैक करें</Link>
           </div>
         </div>
       </div>
