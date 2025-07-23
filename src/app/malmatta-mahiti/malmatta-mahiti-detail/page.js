@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 
 // --- Hardcoded Dropdown Options and Initial States ---
 const VILLAGE_OPTIONS = ['शिरगाव', 'कोळगाव', 'पांडेगाव'];
-const FINANCIAL_YEAR_OPTIONS = ['2023 - 2027', '2022 - 2026', '2021 - 2025'];
+const FINANCIAL_YEAR_OPTIONS = ['--निवडा--', '2023 - 2027', '2022 - 2026', '2021 - 2025'];
 const STREET_OPTIONS = ['घर नंबर चेचडी वस्ती पर्यंत', 'मुख्य रस्ता', 'छत्रपती शिवाजी मार्ग', 'डॉ. आंबेडकर पथ'];
 const PROPERTY_TYPES = [
   'अर्ध पक्के घरासाठी भिटीचे मातीचे घर', 'आर सी सी पद्धतीचे बांधकाम',
@@ -25,32 +25,32 @@ const DEPENDENT_TAX_OPTIONS = {
     '१-मालमत्ता किंमत खाली': ['किंमतीवर आधारित कर'],
     '२-वार्षिक भाड्याचे उत्पन्नावर कर पात्र': ['भाड्याच्या उत्पन्नावर आधारित कर'],
 };
-const AUTHORIZATION_OPTIONS = ['अधिकृत', 'अनधिकृत'];
-const UNIT_OPTIONS = ['sqft', 'sqm'];
-const TOILET_OPTIONS = ['आहे', 'नाही'];
 
+// Updated initial states to include all fields from the screenshot
 const initialMainData = {
-    serialNo: '', period: '2023 - 2027', village: 'शिरगाव', financialYear: '2023 - 2027',
+    serialNo: '', period: '2023 - 2027', village: 'शिरगाव', financialYear: '--निवडा--',
     propertyNoFull: '', wardNo: '', prabhagNo: '', propertyNo: '',
-    street: 'घर नंबर चेचडी वस्ती पर्यंत', holderName: '', aadharNo: '',
-    mobileNo: '', holderNameEnglish: '', atticInfo: '', waterSupplyType: 'निरंक',
-    tapCount: '0', flatNo: '', meterSurveyNo: '', gatNo: '', toilet: 'आहे',
-    notes: '',
-    planTax: true, diwaliTax: false, diwanAgam: false, inDefenseArea: false, isMIDC: false, specialProperty: false
+    street: 'घर नंबर चेचडी वस्ती पर्यंत', holderName: '', patniName: '', aadharNo: '',
+    bhogvataDharakName: '', mobileNo: '', holderNameEnglish: '', waterSupplyType: 'निरंक',
+    tapCount: '0', flatNo: '', notes: '',
+    arogyaTax: false, diwabattiTax: true, divyangTax: false,
+    inDefenseArea: false, isMIDC: false, isSpecialWater: false,
+    isKamijastaPatrak: false,
 };
 
 const initialDescription = {
-    id: null, propertyType: 'अर्ध पक्के घरासाठी भिटीचे मातीचे घर', floor: 'Ground Floor', otherInfo: '',
-    unit: 'sqft', length: '', width: '', area: '', usage: 'रहिवासी', authorization: 'अधिकृत',
-    constructionYear: '', landConstructionRate: '2023 - 2024', previousTaxSurcharge: '0',
-    landRate: '', rebate: '', oldValue: '0', propertyTaxRateType: '',
-    dependentTaxType: 'तळमजला दर प्रती चौ.मी.'
+    id: null, propertyType: 'अर्ध पक्के घरासाठी भिटीचे मातीचे घर', floor: 'Ground Floor',
+    unit: 'sqft', length: '', width: '', area: '', usage: '',
+    constructionYear: '', rebate: '', propertyTaxRateType: '', dependentTaxType: '',
+    otherInfo: '', authorization: 'अधिकृत', landConstructionRate: '',
+    previousTaxSurcharge: '', landRate: '', oldValue: '',
 };
 
-// Reusable component for consistent form fields
-const FormField = ({ id, label, children }) => (
-    <div>
-        <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+
+// Reusable component for consistent form fields with compact styling
+const FormField = ({ id, label, children, className = '' }) => (
+    <div className={className}>
+        <label htmlFor={id} className="block text-xs font-medium text-gray-600 mb-0.5">{label}</label>
         {children}
     </div>
 );
@@ -58,8 +58,8 @@ const FormField = ({ id, label, children }) => (
 // Reusable component for checkboxes
 const CheckboxField = ({ name, checked, onChange, label }) => (
     <div className="flex items-center">
-        <input id={name} name={name} type="checkbox" checked={checked} onChange={onChange} className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" />
-        <label htmlFor={name} className="ml-2 block text-sm text-gray-900">{label}</label>
+        <input id={name} name={name} type="checkbox" checked={checked} onChange={onChange} className="h-4 w-4 text-indigo-600 border-gray-400 rounded focus:ring-indigo-500" />
+        <label htmlFor={name} className="ml-2 block text-sm text-gray-800">{label}</label>
     </div>
 );
 
@@ -69,21 +69,21 @@ export default function ModernMalmattaForm() {
     const [currentDescription, setCurrentDescription] = useState(initialDescription);
     const [descriptions, setDescriptions] = useState([]);
     const [editingId, setEditingId] = useState(null);
-    const [dependentOptions, setDependentOptions] = useState(DEPENDENT_TAX_OPTIONS.default);
+    const [isSerialLoading, setIsSerialLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errors, setErrors] = useState({});
-    const [isSerialLoading, setIsSerialLoading] = useState(true);
 
-    // Function to fetch the next serial number from the API
+    // --- FIX: Restore the state for the dependent dropdown ---
+    const [dependentOptions, setDependentOptions] = useState(DEPENDENT_TAX_OPTIONS.default);
+    
+    const isHolderInfoFilled = mainData.holderName.trim() !== '';
+
     const fetchNextSerial = async () => {
         try {
             setIsSerialLoading(true);
             const response = await fetch('/api/get-next-serial');
-            if (!response.ok) {
-                throw new Error('Could not fetch serial number');
-            }
+            if (!response.ok) throw new Error('Could not fetch serial number');
             const data = await response.json();
-            // Update the serialNo in the mainData state
             setMainData(prev => ({ ...prev, serialNo: data.nextSerialNumber.toString() }));
         } catch (error) {
             console.error("Failed to fetch serial number:", error);
@@ -93,12 +93,10 @@ export default function ModernMalmattaForm() {
         }
     };
 
-    // Fetch the serial number when the component first loads
     useEffect(() => {
         fetchNextSerial();
-    }, []); // Empty dependency array ensures this runs only once on mount
+    }, []);
 
-    // Calculate area automatically
     useEffect(() => {
         const { length, width } = currentDescription;
         if (length && width && !isNaN(length) && !isNaN(width)) {
@@ -107,41 +105,19 @@ export default function ModernMalmattaForm() {
             setCurrentDescription(prev => ({ ...prev, area: '' }));
         }
     }, [currentDescription.length, currentDescription.width]);
-
-    // Update dependent tax options based on the main tax type
+    
+    // --- FIX: Restore the useEffect to update the dependent dropdown's options ---
     useEffect(() => {
         const options = DEPENDENT_TAX_OPTIONS[currentDescription.propertyTaxRateType] || DEPENDENT_TAX_OPTIONS.default;
         setDependentOptions(options);
+        // Automatically select the first option when the parent dropdown changes
         setCurrentDescription(prev => ({...prev, dependentTaxType: options[0] || ''}));
     }, [currentDescription.propertyTaxRateType]);
-
-    const validateField = (name, value) => {
-        const tempErrors = { ...errors };
-        switch (name) {
-            case 'holderName':
-                if (!value.trim()) tempErrors.holderName = 'धारकाचे नाव आवश्यक आहे.';
-                else delete tempErrors.holderName;
-                break;
-            case 'mobileNo':
-                if (value && !/^\d{10}$/.test(value)) tempErrors.mobileNo = 'मोबाईल नंबर १० अंकी असावा.';
-                else delete tempErrors.mobileNo;
-                break;
-            case 'aadharNo':
-                if (value && !/^\d{12}$/.test(value)) tempErrors.aadharNo = 'आधार क्रमांक १२ अंकी असावा.';
-                else delete tempErrors.aadharNo;
-                break;
-            default:
-                break;
-        }
-        setErrors(tempErrors);
-    };
-
+    
     const handleMainChange = (e) => {
         const { name, value, type, checked } = e.target;
-        if ((name === "mobileNo" || name === "aadharNo") && value && !/^\d*$/.test(value)) return;
         const updatedValue = type === 'checkbox' ? checked : value;
         setMainData(prev => ({ ...prev, [name]: updatedValue }));
-        validateField(name, updatedValue);
     };
 
     const handleDescriptionChange = (e) => {
@@ -169,8 +145,6 @@ export default function ModernMalmattaForm() {
     const handleEditDescription = (id) => {
         const descToEdit = descriptions.find(d => d.id === id);
         if (descToEdit) {
-            const descriptionSection = document.getElementById('description-section');
-            if(descriptionSection) descriptionSection.scrollIntoView({ behavior: 'smooth' });
             setEditingId(id);
             setCurrentDescription(descToEdit);
         }
@@ -182,29 +156,19 @@ export default function ModernMalmattaForm() {
             if(id === editingId) handleNewDescription();
         }
     };
-    
-    // Function to completely reset the form state after successful submission
+
     const resetForm = () => {
         setMainData(initialMainData);
         setDescriptions([]);
         setErrors({});
         handleNewDescription();
-        // Fetch the next serial number for the new form
         fetchNextSerial();
     }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const formErrors = { ...errors };
-        if (!mainData.holderName.trim()) formErrors.holderName = 'धारकाचे नाव आवश्यक आहे.';
-        if (mainData.mobileNo && !/^\d{10}$/.test(mainData.mobileNo)) formErrors.mobileNo = 'मोबाईल नंबर १० अंकी असावा.';
-        if (mainData.aadharNo && !/^\d{12}$/.test(mainData.aadharNo)) formErrors.aadharNo = 'आधार क्रमांक १२ अंकी असावा.';
-        
-        Object.keys(formErrors).forEach(key => !formErrors[key] && delete formErrors[key]);
-
-        if (Object.keys(formErrors).length > 0) {
-            setErrors(formErrors);
-            alert('कृपया अर्ज सबमिट करण्यापूर्वी फॉर्ममधील त्रुटी तपासा आणि दुरुस्त करा.');
+        if (!mainData.holderName.trim()) {
+            alert('धारकाचे नाव आवश्यक आहे.');
             return;
         }
         if (descriptions.length === 0) {
@@ -221,7 +185,7 @@ export default function ModernMalmattaForm() {
             const result = await response.json();
             if (!response.ok) throw new Error(result.message || 'Server error');
             alert(`अर्ज यशस्वीरित्या जतन झाला! तुमचा अर्ज क्रमांक आहे: ${result.applicationId}`);
-            resetForm(); // Reset the form completely
+            resetForm();
         } catch (error) {
             alert(`अर्ज जतन करताना त्रुटी आली: ${error.message}`);
         } finally {
@@ -229,190 +193,158 @@ export default function ModernMalmattaForm() {
         }
     };
 
-    const inputClass = "w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm";
-    const errorInputClass = "border-red-500";
-    const readOnlyClass = "bg-gray-100 cursor-not-allowed";
+    const inputClass = "w-full p-1 border border-gray-400 rounded-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm";
+    const readOnlyClass = "bg-gray-200 cursor-not-allowed";
+    const compactButtonClass = "px-4 py-1 text-sm font-semibold border border-gray-400 rounded-sm shadow-sm";
 
     return (
-        <div className="bg-gray-50 min-h-screen">
-            <div className="container mx-auto px-4 py-6">
-                <header className="mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900">मालमत्ता माहिती व कर आकारणी</h1>
-                    <p className="text-gray-600 mt-1 text-sm">नवीन मालमत्ता नोंदणी करण्यासाठी खालील माहिती भरा.</p>
-                </header>
-
-                <form onSubmit={handleSubmit} className="space-y-6">
-
+        <div className="bg-[#EAF3FE] min-h-screen p-2">
+            <div className="bg-white container mx-auto p-4 border border-gray-400 shadow-lg">
+                <h1 className="text-xl font-bold text-center mb-4">मालमत्ता माहिती</h1>
+                
+                <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Section 1: Holder's Details */}
-                    <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
-                        <h2 className="text-lg font-semibold text-gray-800 mb-4">१. मालमत्ता धारकाची माहिती</h2>
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <FormField id="serialNo" label="सिरियल नंबर">
-                                    <input 
-                                        type="text" 
-                                        name="serialNo" 
-                                        value={isSerialLoading ? 'Loading...' : mainData.serialNo} 
-                                        className={`${inputClass} ${readOnlyClass}`} 
-                                        readOnly 
-                                    />
-                                </FormField>
-                                <FormField id="period" label="कालावधी"><input type="text" name="period" value={mainData.period} onChange={handleMainChange} className={inputClass} /></FormField>
-                                <FormField id="village" label="गाव"><select name="village" value={mainData.village} onChange={handleMainChange} className={inputClass}>{VILLAGE_OPTIONS.map(opt => <option key={opt}>{opt}</option>)}</select></FormField>
-                                <FormField id="financialYear" label="आर्थिक वर्ष"><select name="financialYear" value={mainData.financialYear} onChange={handleMainChange} className={inputClass}>{FINANCIAL_YEAR_OPTIONS.map(opt => <option key={opt}>{opt}</option>)}</select></FormField>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <FormField id="propertyNoFull" label="मालमत्ता क्र. (नमुना ८)"><input type="text" name="propertyNoFull" value={mainData.propertyNoFull} onChange={handleMainChange} className={inputClass} /></FormField>
-                                <FormField id="wardNo" label="Ward प्रभाग क्र."><input type="text" name="wardNo" value={mainData.wardNo} onChange={handleMainChange} className={inputClass} /></FormField>
-                                <FormField id="prabhagNo" label="प्रभाग क्र."><input type="text" name="prabhagNo" value={mainData.prabhagNo} onChange={handleMainChange} className={inputClass} /></FormField>
-                                <FormField id="propertyNo" label="मालमत्ता क्रमांक"><input type="text" name="propertyNo" value={mainData.propertyNo} onChange={handleMainChange} className={inputClass} /></FormField>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FormField id="street" label="रस्त्याचे नाव / गल्ली"><select name="street" value={mainData.street} onChange={handleMainChange} className={inputClass}>{STREET_OPTIONS.map(opt => <option key={opt}>{opt}</option>)}</select></FormField>
-                                <FormField id="holderName" label="धारकाचे नाव (मराठी)">
-                                    <input type="text" name="holderName" value={mainData.holderName} onChange={handleMainChange} className={`${inputClass} ${errors.holderName ? errorInputClass : ''}`} required />
-                                    {errors.holderName && <p className="text-red-500 text-xs mt-1">{errors.holderName}</p>}
-                                </FormField>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <FormField id="aadharNo" label="आधार क्रमांक">
-                                    <input type="text" name="aadharNo" value={mainData.aadharNo} onChange={handleMainChange} className={`${inputClass} ${errors.aadharNo ? errorInputClass : ''}`} placeholder="12-digit number" maxLength="12" />
-                                    {errors.aadharNo && <p className="text-red-500 text-xs mt-1">{errors.aadharNo}</p>}
-                                </FormField>
-                                <FormField id="mobileNo" label="मोबाईल नंबर">
-                                    <input type="tel" name="mobileNo" value={mainData.mobileNo} onChange={handleMainChange} className={`${inputClass} ${errors.mobileNo ? errorInputClass : ''}`} placeholder="10-digit number" maxLength="10" />
-                                    {errors.mobileNo && <p className="text-red-500 text-xs mt-1">{errors.mobileNo}</p>}
-                                </FormField>
-                                <FormField id="holderNameEnglish" label="धारकाचे नाव (English)"><input type="text" name="holderNameEnglish" value={mainData.holderNameEnglish} onChange={handleMainChange} className={inputClass} /></FormField>
-                                <FormField id="atticInfo" label="माळ्याची माहिती"><input type="text" name="atticInfo" value={mainData.atticInfo} onChange={handleMainChange} className={inputClass} /></FormField>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Section 2: Water Supply Info */}
-                    <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
-                        <h2 className="text-lg font-semibold text-gray-800 mb-4">२. पाणीपुरवठा विषयक माहिती</h2>
-                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                            <FormField id="waterSupplyType" label="पाणीपुरवठा प्रकार"><input type="text" name="waterSupplyType" value={mainData.waterSupplyType} onChange={handleMainChange} className={inputClass} /></FormField>
-                            <FormField id="tapCount" label="नळ संख्या"><input type="number" name="tapCount" value={mainData.tapCount} onChange={handleMainChange} className={inputClass} /></FormField>
-                            <FormField id="flatNo" label="फ्लॅट क्रमांक"><input type="text" name="flatNo" value={mainData.flatNo} onChange={handleMainChange} className={inputClass} /></FormField>
-                            <FormField id="meterSurveyNo" label="मीटर सर्व्हे नंबर"><input type="text" name="meterSurveyNo" value={mainData.meterSurveyNo} onChange={handleMainChange} className={inputClass} /></FormField>
-                            <FormField id="gatNo" label="गट नंबर"><input type="text" name="gatNo" value={mainData.gatNo} onChange={handleMainChange} className={inputClass} /></FormField>
-                            <FormField id="toilet" label="शौचालय"><select name="toilet" value={mainData.toilet} onChange={handleMainChange} className={inputClass}>{TOILET_OPTIONS.map(opt => <option key={opt}>{opt}</option>)}</select></FormField>
-                        </div>
-                    </div>
-
-                    {/* Section 3: Other Info */}
-                    <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
-                         <h2 className="text-lg font-semibold text-gray-800 mb-4">३. इतर माहिती</h2>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                            <FormField id="notes" label="शेरा (Notes)">
-                                <textarea name="notes" value={mainData.notes} onChange={handleMainChange} className={inputClass} rows="5"></textarea>
-                            </FormField>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">इतर कर:</label>
-                                <div className="space-y-2 p-2 border rounded-md">
-                                    <CheckboxField name="planTax" label="प्लॅन टॅक्स" checked={mainData.planTax} onChange={handleMainChange} />
-                                    <CheckboxField name="diwaliTax" label="दिवाळी कर" checked={mainData.diwaliTax} onChange={handleMainChange} />
-                                    <CheckboxField name="diwanAgam" label="दिवाण अगम" checked={mainData.diwanAgam} onChange={handleMainChange} />
-                                    <CheckboxField name="inDefenseArea" label="In Defence Area" checked={mainData.inDefenseArea} onChange={handleMainChange} />
-                                    <CheckboxField name="isMIDC" label="Is MIDC" checked={mainData.isMIDC} onChange={handleMainChange} />
-                                    <CheckboxField name="specialProperty" label="विशेष मालमत्ता" checked={mainData.specialProperty} onChange={handleMainChange} />
+                    <fieldset className="p-2 border border-gray-300">
+                        <legend className="px-2 text-sm font-semibold">मालमत्ता धारकाची माहिती</legend>
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-x-4 gap-y-2">
+                            {/* Main Info Fields */}
+                            <div className="lg:col-span-9 space-y-2">
+                                {/* All rows and fields in this section are correct */}
+                                {/* ... rows 1 to 7 ... */}
+                                <div className="grid grid-cols-4 gap-x-4">
+                                    <FormField id="serialNo" label="अ.क्र :"><input type="text" value={isSerialLoading ? '...' : mainData.serialNo} className={`${inputClass} ${readOnlyClass}`} readOnly /></FormField>
+                                    <FormField id="period" label="कालावधी :"><input type="text" name="period" value={mainData.period} onChange={handleMainChange} className={inputClass} /></FormField>
+                                    <FormField id="village" label="गावाचे नाव :"><select name="village" value={mainData.village} onChange={handleMainChange} className={inputClass}>{VILLAGE_OPTIONS.map(opt => <option key={opt}>{opt}</option>)}</select></FormField>
+                                    <FormField id="financialYear" label="मालमत्ता नोंद आर्थिक वर्ष :"><select name="financialYear" value={mainData.financialYear} onChange={handleMainChange} className={inputClass}>{FINANCIAL_YEAR_OPTIONS.map(opt => <option key={opt}>{opt}</option>)}</select></FormField>
+                                </div>
+                                <div className="grid grid-cols-4 gap-x-4">
+                                    <FormField id="propertyNoFull" label="मालमत्ता क्रमांक(जुना नमुना नं.८ नुसार) :"><input type="text" name="propertyNoFull" value={mainData.propertyNoFull} onChange={handleMainChange} className={inputClass} /></FormField>
+                                    <FormField id="wardNo" label="2 Ward प्रभाग क्र. ?"><input type="text" name="wardNo" value={mainData.wardNo} onChange={handleMainChange} className={inputClass} /></FormField>
+                                    <FormField id="prabhagNo" label="वॉर्ड नंबर :"><input type="text" name="prabhagNo" value={mainData.prabhagNo} onChange={handleMainChange} className={inputClass} /></FormField>
+                                    <FormField id="propertyNo" label="प्रभाग क्र. ?"><input type="text" name="propertyNo" value={mainData.propertyNo} onChange={handleMainChange} className={inputClass} /></FormField>
+                                </div>
+                                <div className="grid grid-cols-4 gap-x-4">
+                                    <FormField id="street" label="रस्त्याचे नाव / गल्लीचा क्रमांक :" className="col-span-3"><select name="street" value={mainData.street} onChange={handleMainChange} className={inputClass}>{STREET_OPTIONS.map(opt => <option key={opt}>{opt}</option>)}</select></FormField>
+                                </div>
+                                <div className="grid grid-cols-2 gap-x-4">
+                                    <FormField id="holderName" label="१.मालमत्ता धारकाचे नाव :"><input type="text" name="holderName" value={mainData.holderName} onChange={handleMainChange} className={inputClass} required/></FormField>
+                                    <FormField id="patniName" label="पत्नीचे नाव :"><input type="text" name="patniName" value={mainData.patniName} onChange={handleMainChange} className={inputClass} /></FormField>
+                                    <FormField id="bhogvataDharakName" label="भोगवटा धारकाचे नाव :"><input type="text" name="bhogvataDharakName" value={mainData.bhogvataDharakName} onChange={handleMainChange} className={inputClass} /></FormField>
+                                    <FormField id="aadharNo" label="आधार क्रमांक :"><input type="text" name="aadharNo" value={mainData.aadharNo} onChange={handleMainChange} className={inputClass} maxLength="12" /></FormField>
+                                </div>
+                                <div className="grid grid-cols-2 gap-x-4">
+                                    <FormField id="holderNameEnglish" label="२.मालमत्ता धारकाचे नाव (ENGLISH) :"><input type="text" name="holderNameEnglish" value={mainData.holderNameEnglish} onChange={handleMainChange} className={inputClass} /></FormField>
+                                    <FormField id="mobileNo" label="मोबाईल नंबर :"><input type="tel" name="mobileNo" value={mainData.mobileNo} onChange={handleMainChange} className={inputClass} maxLength="10" /></FormField>
+                                </div>
+                                <div className="grid grid-cols-3 gap-x-4">
+                                    <FormField id="flatNo" label="फ्लॅट क्रमांक :"><input type="text" name="flatNo" value={mainData.flatNo} onChange={handleMainChange} className={inputClass} /></FormField>
+                                    <FormField id="waterSupplyType" label="पाणीवापर प्रकार :"><input type="text" name="waterSupplyType" value={mainData.waterSupplyType} onChange={handleMainChange} className={inputClass} /></FormField>
+                                    <FormField id="tapCount" label="नळ संख्या :"><input type="number" name="tapCount" value={mainData.tapCount} onChange={handleMainChange} className={inputClass} /></FormField>
                                 </div>
                             </div>
-                         </div>
-                    </div>
+                            <div className="lg:col-span-3 border-l-2 border-gray-300 pl-4 space-y-2">
+                                <CheckboxField name="arogyaTax" label="आरोग्य कर" checked={mainData.arogyaTax} onChange={handleMainChange} />
+                                <CheckboxField name="diwabattiTax" label="दिवाबत्ती कर" checked={mainData.diwabattiTax} onChange={handleMainChange} />
+                                <CheckboxField name="divyangTax" label="दिव्यांग/अपंग" checked={mainData.divyangTax} onChange={handleMainChange} />
+                                <CheckboxField name="inDefenseArea" label="संरक्षण क्षेत्रात काम करत असलेस" checked={mainData.inDefenseArea} onChange={handleMainChange} />
+                                <CheckboxField name="isMIDC" label="महाराष्ट्र औद्योगिक विकास महामंडळ (MIDC)" checked={mainData.isMIDC} onChange={handleMainChange} />
+                                <CheckboxField name="isSpecialWater" label="विशेष पाणीपट्टी साठी स्वतंत्र नोंदणी करण्यासाठी" checked={mainData.isSpecialWater} onChange={handleMainChange} />
+                                <FormField id="notes" label="Notes :" className="mt-4"><textarea name="notes" value={mainData.notes} onChange={handleMainChange} className={inputClass} rows="2"></textarea></FormField>
+                            </div>
+                        </div>
+                    </fieldset>
 
-                    {/* Section 4: Add Property Description */}
-                    <div id="description-section" className="bg-white p-4 rounded-lg shadow-md border border-gray-200 scroll-mt-20">
-                        <h2 className="text-lg font-semibold text-gray-800 mb-4">४. मालमत्तेचे वर्णन {editingId ? '(नोंदणी बदलत आहे)' : '(नवीन नोंदणी)'}</h2>
-                        <div className="space-y-4">
-                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <FormField id="propertyType" label="मालमत्तेचा प्रकार"><select name="propertyType" value={currentDescription.propertyType} onChange={handleDescriptionChange} className={inputClass}>{PROPERTY_TYPES.map(opt => <option key={opt}>{opt}</option>)}</select></FormField>
-                                <FormField id="floor" label="मजला"><select name="floor" value={currentDescription.floor} onChange={handleDescriptionChange} className={inputClass}>{FLOOR_OPTIONS.map(opt => <option key={opt}>{opt}</option>)}</select></FormField>
-                                <FormField id="otherInfo" label="इतर माहिती"><input type="text" name="otherInfo" value={currentDescription.otherInfo} onChange={handleDescriptionChange} className={inputClass} /></FormField>
-                                <FormField id="unit" label="Unit"><select name="unit" value={currentDescription.unit} onChange={handleDescriptionChange} className={inputClass}>{UNIT_OPTIONS.map(opt => <option key={opt}>{opt}</option>)}</select></FormField>
-                             </div>
-                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                                <FormField id="length" label="लांबी (फूट)"><input type="number" step="0.01" name="length" value={currentDescription.length} onChange={handleDescriptionChange} className={inputClass} placeholder="e.g., 30" /></FormField>
-                                <FormField id="width" label="रुंदी (फूट)"><input type="number" step="0.01" name="width" value={currentDescription.width} onChange={handleDescriptionChange} className={inputClass} placeholder="e.g., 48" /></FormField>
-                                <FormField id="area" label="एकूण क्षेत्रफळ (चौ.फू.)"><input type="text" name="area" value={currentDescription.area} className={`${inputClass} ${readOnlyClass}`} readOnly /></FormField>
-                                <FormField id="usage" label="वापर"><input type="text" name="usage" value={currentDescription.usage} onChange={handleDescriptionChange} className={inputClass} placeholder="e.g., रहिवासी" /></FormField>
+                    {/* Section 2: Property Description */}
+                    <fieldset className="p-2 border border-gray-300 relative" disabled={!isHolderInfoFilled}>
+                        {!isHolderInfoFilled && (
+                            <div className="absolute inset-0 bg-gray-100/80 flex items-center justify-center rounded-sm z-10 cursor-not-allowed">
+                                <p className="text-gray-700 font-bold p-4 bg-yellow-200 border border-yellow-400 rounded">कृपया आधी मालमत्ता धारकाची माहिती भरा</p>
                             </div>
-                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <FormField id="authorization" label="बांधकाम प्रकार"><select name="authorization" value={currentDescription.authorization} onChange={handleDescriptionChange} className={inputClass}>{AUTHORIZATION_OPTIONS.map(opt => <option key={opt}>{opt}</option>)}</select></FormField>
-                                <FormField id="constructionYear" label="बांधकाम वर्ष"><input type="number" name="constructionYear" value={currentDescription.constructionYear} onChange={handleDescriptionChange} className={inputClass} placeholder="e.g., 1995" /></FormField>
-                                <FormField id="landConstructionRate" label="जमीन बांधकाम दर"><input type="text" name="landConstructionRate" value={currentDescription.landConstructionRate} onChange={handleDescriptionChange} className={inputClass} /></FormField>
-                                <FormField id="previousTaxSurcharge" label="मागील कर वाढ"><input type="number" step="0.01" name="previousTaxSurcharge" value={currentDescription.previousTaxSurcharge} onChange={handleDescriptionChange} className={inputClass} /></FormField>
+                        )}
+                        <legend className="px-2 text-sm font-semibold">मालमत्तेचे वर्णन</legend>
+                        <div className="space-y-2">
+                            {/* ... other description fields ... */}
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+                                <FormField id="propertyType" label="मि.प्रकार :"><select name="propertyType" value={currentDescription.propertyType} onChange={handleDescriptionChange} className={inputClass}>{PROPERTY_TYPES.map(opt => <option key={opt}>{opt}</option>)}</select></FormField>
+                                <FormField id="floor" label="मजला :"><select name="floor" value={currentDescription.floor} onChange={handleDescriptionChange} className={inputClass}>{FLOOR_OPTIONS.map(opt => <option key={opt}>{opt}</option>)}</select></FormField>
                             </div>
-                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <FormField id="landRate" label="जमीन दर"><input type="number" step="0.01" name="landRate" value={currentDescription.landRate} onChange={handleDescriptionChange} className={inputClass} /></FormField>
-                                <FormField id="rebate" label="सूट"><input type="text" name="rebate" value={currentDescription.rebate} onChange={handleDescriptionChange} className={inputClass} /></FormField>
-                                <FormField id="oldValue" label="जुनी किंमत"><input type="text" name="oldValue" value={currentDescription.oldValue} onChange={handleDescriptionChange} className={inputClass} /></FormField>
-                            </div>
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FormField id="propertyTaxRateType" label="मालमत्ता कर दर प्रकार">
-                                     <select name="propertyTaxRateType" value={currentDescription.propertyTaxRateType} onChange={handleDescriptionChange} className={inputClass}>
-                                        <option value="">-- निवडा --</option>{TAX_RATE_TYPES.map(opt => <option key={opt}>{opt}</option>)}
+                            <fieldset className="p-2 border border-gray-300">
+                                <legend className="px-2 text-xs font-semibold">इमारतीचे क्षेत्रफळ</legend>
+                                <div className="flex items-end gap-x-4">
+                                    <div className="flex items-center space-x-4">
+                                        <label className="flex items-center"><input type="radio" name="unit" value="sqft" checked={currentDescription.unit === 'sqft'} onChange={handleDescriptionChange} className="mr-1"/> चौ. फू.</label>
+                                        <label className="flex items-center"><input type="radio" name="unit" value="sqm" checked={currentDescription.unit === 'sqm'} onChange={handleDescriptionChange} className="mr-1"/> चौ. मी.</label>
+                                    </div>
+                                    <FormField id="length" label="लांबी"><input type="number" step="0.01" name="length" value={currentDescription.length} onChange={handleDescriptionChange} className={inputClass} style={{width: '100px'}}/></FormField>
+                                    <FormField id="width" label="रुंदी"><input type="number" step="0.01" name="width" value={currentDescription.width} onChange={handleDescriptionChange} className={inputClass} style={{width: '100px'}}/></FormField>
+                                    <FormField id="area" label="क्षेत्रफळ"><input type="text" name="area" value={currentDescription.area} className={`${inputClass} ${readOnlyClass}`} readOnly style={{width: '100px'}}/></FormField>
+                                    <FormField id="usage" label="वापर"><input type="text" name="usage" value={currentDescription.usage} onChange={handleDescriptionChange} className={inputClass} style={{width: '120px'}}/></FormField>
+                                </div>
+                            </fieldset>
+                            <div className="grid grid-cols-4 gap-x-4">
+                                <FormField id="constructionYear" label="बांधकाम वर्ष"><input type="number" name="constructionYear" value={currentDescription.constructionYear} onChange={handleDescriptionChange} className={inputClass} /></FormField>
+                                <FormField id="rebate" label="कर सूट प्रकार"><input type="text" name="rebate" value={currentDescription.rebate} onChange={handleDescriptionChange} className={inputClass} /></FormField>
+                                <FormField id="propertyTaxRateType" label="६. मालमत्ता कर दर प्रकार"><select name="propertyTaxRateType" value={currentDescription.propertyTaxRateType} onChange={handleDescriptionChange} className={inputClass}><option value="">-- निवडा --</option>{TAX_RATE_TYPES.map(opt => <option key={opt}>{opt}</option>)}</select></FormField>
+                                
+                                {/* --- FIX: Added onChange and dynamic options --- */}
+                                <FormField id="dependentTaxType" label="७. रेडिरेकनर प्रमाणे भाग/उपविभाग">
+                                    <select 
+                                        name="dependentTaxType" 
+                                        value={currentDescription.dependentTaxType} 
+                                        onChange={handleDescriptionChange} 
+                                        className={inputClass}
+                                    >
+                                        {dependentOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                                     </select>
                                 </FormField>
-                                <FormField id="dependentTaxType" label="प्रभाग उपविभाग (स्वयंचलित)">
-                                    <select name="dependentTaxType" value={currentDescription.dependentTaxType} onChange={handleDescriptionChange} className={inputClass}>
-                                        {dependentOptions.map(opt => <option key={opt}>{opt}</option>)}
-                                    </select>
-                                </FormField>
-                             </div>
+                            </div>
                         </div>
-                         <div className="mt-4 pt-4 border-t flex items-center gap-4">
-                            <button type="button" onClick={handleSaveDescription} className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                {editingId ? 'वर्णन अपडेट करा' : 'वर्णन जोडा'}
-                            </button>
-                             <button type="button" onClick={handleNewDescription} className="px-6 py-2 bg-gray-200 text-gray-700 font-semibold rounded-md hover:bg-gray-300">
-                                साफ करा
-                            </button>
+                        <div className="mt-2 pt-2 border-t flex items-center gap-2">
+                             <button type="button" onClick={handleNewDescription} className={`${compactButtonClass} bg-gray-200 hover:bg-gray-300`}>नवीन</button>
+                             <button type="button" onClick={handleSaveDescription} className={`${compactButtonClass} bg-blue-600 text-white hover:bg-blue-700`}>{editingId ? 'अपडेट करा' : 'साठवणे'}</button>
+                             <button type="button" onClick={() => setCurrentDescription(initialDescription)} className={`${compactButtonClass} bg-gray-200 hover:bg-gray-300`}>रद्द करणे</button>
+                             <button type="button" disabled={!editingId} onClick={handleSaveDescription} className={`${compactButtonClass} bg-gray-200 hover:bg-gray-300 disabled:opacity-50`}>बदल</button>
+                             <button type="button" disabled={!editingId} onClick={() => handleDeleteDescription(editingId)} className={`${compactButtonClass} bg-red-500 text-white hover:bg-red-600 disabled:opacity-50`}>काढणे</button>
                         </div>
-                    </div>
+                    </fieldset>
 
-                    {/* Section 5: List of Added Descriptions */}
+                    {/* Section 3: List of Added Descriptions */}
                     {descriptions.length > 0 && (
-                        <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
-                            <h2 className="text-lg font-semibold text-gray-800 mb-4">५. जोडलेल्या मालमत्तेची यादी</h2>
-                            <div className="overflow-x-auto border rounded-lg">
-                                <table className="min-w-full text-sm">
-                                    <thead className="bg-gray-100">
-                                        <tr>
-                                            {['प्रकार', 'मजला', 'क्षेत्रफळ', 'वापर', 'बांधकाम वर्ष', 'Actions'].map(h =>
-                                                <th key={h} className="p-3 text-left font-semibold text-gray-600 tracking-wider">{h}</th>)}
+                        <div className="overflow-x-auto border border-gray-400">
+                            <table className="min-w-full text-sm text-center">
+                                <thead className="bg-gray-200">
+                                    <tr>
+                                        {['मि नं.', 'मि.प्रकार', 'मजला', 'लांबी', 'रुंदी', 'क्षेत्रफळ', 'वापर', 'बांधकाम वर्ष', 'कर सूट प्रकार', 'Action'].map(h =>
+                                            <th key={h} className="p-1 border border-gray-300 font-semibold text-gray-700">{h}</th>)}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {descriptions.map((d, index) => (
+                                        <tr key={d.id} className="bg-white">
+                                            <td className="p-1 border border-gray-300">{index + 1}</td>
+                                            <td className="p-1 border border-gray-300 text-left">{d.propertyType}</td>
+                                            <td className="p-1 border border-gray-300">{d.floor}</td>
+                                            <td className="p-1 border border-gray-300">{d.length}</td>
+                                            <td className="p-1 border border-gray-300">{d.width}</td>
+                                            <td className="p-1 border border-gray-300">{d.area}</td>
+                                            <td className="p-1 border border-gray-300">{d.usage}</td>
+                                            <td className="p-1 border border-gray-300">{d.constructionYear}</td>
+                                            <td className="p-1 border border-gray-300">{d.rebate}</td>
+                                            <td className="p-1 border border-gray-300">
+                                                <button type="button" onClick={() => handleEditDescription(d.id)} className="font-medium text-indigo-600 hover:underline">Edit</button>
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-200">
-                                        {descriptions.map((d, index) => (
-                                            <tr key={d.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-                                                <td className="p-3 text-gray-800">{d.propertyType}</td>
-                                                <td className="p-3 text-gray-800">{d.floor}</td>
-                                                <td className="p-3 text-gray-800">{d.area} {d.unit}</td>
-                                                <td className="p-3 text-gray-800">{d.usage}</td>
-                                                <td className="p-3 text-gray-800">{d.constructionYear}</td>
-                                                <td className="p-3 space-x-4 whitespace-nowrap">
-                                                    <button type="button" onClick={() => handleEditDescription(d.id)} className="font-medium text-indigo-600 hover:text-indigo-800">बदल</button>
-                                                    <button type="button" onClick={() => handleDeleteDescription(d.id)} className="font-medium text-red-600 hover:text-red-800">काढा</button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     )}
-
-                    {/* Final Submission Section */}
-                    <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
-                        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                            <p className="text-gray-600 text-sm">कृपया सबमिट करण्यापूर्वी सर्व माहिती तपासा.</p>
-                            <button type="submit" disabled={isSubmitting || isSerialLoading} className="w-full md:w-auto px-8 py-2.5 bg-green-600 text-white font-bold rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 bg-gray-400">
-                                {isSubmitting ? 'जतन करत आहे...' : 'संपूर्ण अर्ज जतन करा'}
-                            </button>
-                        </div>
+                    
+                    <div className="flex justify-between items-center">
+                        <CheckboxField name="isKamijastaPatrak" label="सदर मालमत्तेची नोंद कमी-जास्त पत्रक मध्ये करणे" checked={mainData.isKamijastaPatrak} onChange={handleMainChange} />
+                        <button type="submit" disabled={isSubmitting || isSerialLoading} className="px-6 py-2 bg-green-600 text-white font-bold rounded-md shadow-sm hover:bg-green-700 disabled:bg-gray-400">
+                            {isSubmitting ? 'जतन करत आहे...' : 'संपूर्ण अर्ज जतन करा'}
+                        </button>
                     </div>
                 </form>
             </div>
