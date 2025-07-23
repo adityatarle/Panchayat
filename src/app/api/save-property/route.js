@@ -1,127 +1,61 @@
 // src/app/api/save-property/route.js
 
 import { NextResponse } from 'next/server';
-// Make sure this import path is correct for your project structure.
-// If '@/lib/supabase-server' gives an error, use the relative path.
+// Use the path to your server-side Supabase client.
+// The name `supabaseAdmin` is a good convention for the service role client.
 import supabaseAdmin from '../../../lib/supabase-server'; 
-
-// --- START: Correct and Complete Helper Functions ---
-
-// This function maps the 'mainData' object from your form
-// to the column names in your 'property_holders' database table.
-const mapMainDataToDb = (data) => ({
-  csc_serial_no: data.serialNo,
-  period: data.period,
-  village_name: data.village,
-  financial_year: data.financialYear,
-  property_no_full: data.propertyNoFull,
-  ward_no: data.wardNo,
-  prabhag_no: data.prabhagNo,
-  property_no: data.propertyNo,
-  street_name: data.street,
-  aadhar_no: data.aadharNo,
-  holder_name_marathi: data.holderName, // This was the key field causing the 'not-null' error
-  holder_name_english: data.holderNameEnglish,
-  attic_info: data.atticInfo,
-  mobile_no: data.mobileNo,
-  water_supply_type: data.waterSupplyType,
-  tap_count: data.tapCount,
-  flat_no: data.flatNo,
-  meter_survey_no: data.meterSurveyNo,
-  gat_no: data.gatNo,
-  has_toilet: data.toilet === 'आहे', // Converts the string to a boolean
-  notes: data.notes,
-  has_plan_tax: data.planTax,
-  has_diwali_tax: data.diwaliTax,
-  has_diwan_agam: data.diwanAgam,
-  is_defense_area: data.inDefenseArea,
-  is_midc: data.isMIDC,
-  is_special_property: data.specialProperty,
-});
-
-// This function maps an item from the 'descriptions' array from your form
-// to the column names in your 'property_descriptions' database table.
-const mapDescriptionToDb = (desc, holderId) => ({
-  holder_id: holderId, // The ID from the newly created holder record
-  property_type: desc.propertyType,
-  floor_level: desc.floor,
-  other_info: desc.otherInfo,
-  measurement_unit: desc.unit,
-  length: desc.length,
-  width: desc.width,
-  area: desc.area,
-  usage_type: desc.usage,
-  is_authorized: desc.authorization === 'authorized', // Converts string to boolean
-  construction_year: desc.constructionYear,
-  land_rate_year: desc.landConstructionRate,
-  previous_tax_surcharge: desc.previousTaxSurcharge,
-  land_rate: desc.landRate,
-  rebate_info: desc.rebate,
-  property_tax_rate_type: desc.propertyTaxRateType,
-  dependent_tax_type: desc.dependentTaxType,
-  old_value: desc.oldValue,
-});
-
-// --- END: Correct and Complete Helper Functions ---
-
 
 export async function POST(request) {
   try {
     const { mainData, descriptions } = await request.json();
 
-    // Basic validation to ensure we have data
-    if (!mainData || !descriptions) {
-        return NextResponse.json({ success: false, message: "Invalid data received." }, { status: 400 });
+    // --- Backend Validation ---
+    // It's good practice to validate the most critical data on the server.
+    if (!mainData || !mainData.holderName) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Invalid data: Holder name is required.' 
+      }, { status: 400 });
+    }
+    if (!descriptions || !Array.isArray(descriptions) || descriptions.length === 0) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Invalid data: At least one property description is required.' 
+      }, { status: 400 });
     }
 
-    // Step 1: Insert into 'property_holders' using Supabase
-    const holderDataForDb = mapMainDataToDb(mainData);
-    
-    const { data: holderResult, error: holderError } = await supabaseAdmin
-      .from('property_holders')
-      .insert([holderDataForDb])
-      .select('id') // This is crucial to get the ID for the next step
-      .single(); // Use .single() as we are inserting one record and expect one back
+    // --- Call the Supabase RPC Function ---
+    // This single call executes the entire transaction on the database server.
+    // It's atomic: either everything succeeds, or everything is rolled back.
+    const { data: newHolderId, error } = await supabaseAdmin.rpc('create_property_with_descriptions', {
+      main_data: mainData,
+      descriptions_data: descriptions
+    });
 
-    // If there was an error inserting the main holder, throw it to the catch block
-    if (holderError) {
-        // Provide more context to the error for better debugging
-        holderError.message = `Failed to insert property holder: ${holderError.message}`;
-        throw holderError;
-    }
-    
-    const newHolderId = holderResult.id;
-
-    // Step 2: Insert into 'property_descriptions' using Supabase
-    if (descriptions && descriptions.length > 0) {
-      const descriptionsForDb = descriptions.map(desc => mapDescriptionToDb(desc, newHolderId));
-      
-      const { error: descError } = await supabaseAdmin
-        .from('property_descriptions')
-        .insert(descriptionsForDb);
-
-      // If there was an error inserting the descriptions, throw it
-      if (descError) {
-          descError.message = `Failed to insert property descriptions: ${descError.message}`;
-          throw descError;
-      }
+    // If the RPC function itself returns an error, Supabase will forward it.
+    if (error) {
+      // The error object from Supabase is detailed, so we throw it to be caught below.
+      // This gives us great logs for debugging.
+      throw error;
     }
 
-    // If everything was successful, return the success response
+    // --- Success Response ---
+    // If we reach here, the transaction was successful.
     return NextResponse.json({
       success: true,
       message: 'Property saved successfully!',
-      applicationId: newHolderId,
+      applicationId: newHolderId, // The ID returned from our SQL function
     }, { status: 201 });
 
   } catch (error) {
-    // Log the detailed error on the server
-    console.error('Supabase API Error:', error);
+    // --- Centralized Error Handling ---
+    // Log the detailed error on the server for debugging.
+    console.error('Supabase Transaction Error:', error);
     
-    // Return a user-friendly error message to the client
+    // Return a clean, user-friendly error message to the client.
     return NextResponse.json({
       success: false,
-      message: error.message || 'Failed to save property due to an internal error.',
+      message: error.message || 'Failed to save property due to an internal server error.',
     }, { status: 500 });
   }
 }
