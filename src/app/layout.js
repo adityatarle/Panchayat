@@ -1,10 +1,12 @@
+// src/app/layout.js
+
 import { Inter, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/contexts/LanguageContext";
-import Header from "@/components/Header";
+import Header from "@/components/Header"; // Import the new responsive Header
 import Footer from "@/components/Footer";
 
-// Government-appropriate fonts
+// Fonts remain the same
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
@@ -34,8 +36,9 @@ export default function RootLayout({ children }) {
       >
         <LanguageProvider>
           <div className="flex flex-col min-h-screen">
+            {/* The layout is now much cleaner */}
             <Header />
-            <main className="flex-grow">
+            <main className="flex-grow py-8"> {/* Added padding to the main content area */}
               {children}
             </main>
             <Footer />
