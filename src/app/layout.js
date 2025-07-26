@@ -1,48 +1,26 @@
-// src/app/layout.js
+// File: src/app/layout.js
+import { Inter } from 'next/font/google';
+import './globals.css';
+import { LanguageProvider } from '@/contexts/LanguageContext'; // Adjust path if needed
+import Header from '@/components/Header'; // Adjust path if needed
+import Footer from '@/components/Footer'; // Assuming you have a Footer component
 
-import { Inter, Noto_Sans_Devanagari } from "next/font/google";
-import "./globals.css";
-import { LanguageProvider } from "@/contexts/LanguageContext";
-import Header from "@/components/Header"; // Import the new responsive Header
-import Footer from "@/components/Footer";
-
-// Fonts remain the same
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: 'swap',
-});
-
-const notoSansDevanagari = Noto_Sans_Devanagari({
-  variable: "--font-devanagari",
-  subsets: ["devanagari"],
-  display: 'swap',
-});
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: "ग्राम पंचायत पोर्टल | Gram Panchayat Portal - Maharashtra",
-  description: "डिजिटल ग्राम पंचायत सेवाएं - जन्म प्रमाणपत्र, निवास प्रमाणपत्र, जल कर, गृह कर | Digital Gram Panchayat Services - Birth Certificate, Residence Certificate, Water Tax, House Tax",
-  keywords: "gram panchayat, maharashtra, birth certificate, residence certificate, water tax, house tax, ग्राम पंचायत",
+  title: 'Gram Panchayat Digital Seva',
+  description: 'Digital services for Gram Panchayat',
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="hi" className="scroll-smooth">
-      <head>
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏛️</text></svg>" />
-      </head>
-      <body
-        className={`${inter.variable} ${notoSansDevanagari.variable} antialiased bg-gray-50 font-sans`}
-      >
+    <html lang="en">
+      <body className={inter.className}>
+        {/* Wrap everything inside the LanguageProvider */}
         <LanguageProvider>
-          <div className="flex flex-col min-h-screen">
-            {/* The layout is now much cleaner */}
-            <Header />
-            <main className="flex-grow py-8"> {/* Added padding to the main content area */}
-              {children}
-            </main>
-            <Footer />
-          </div>
+          <Header />
+          <main>{children}</main>
+          {/* <Footer /> */}
         </LanguageProvider>
       </body>
     </html>
